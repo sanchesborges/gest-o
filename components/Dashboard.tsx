@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { DollarSign, Package, ShoppingCart, AlertTriangle, Sparkles, UserPlus, UserCheck, Bike, Phone, X } from 'lucide-react';
+import { DollarSign, Package, ShoppingCart, AlertTriangle, Sparkles, UserCheck, Bike } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { StatusPagamento, UserRole, StatusPedido, Pedido } from '../types';
 import { generateSalesSummary } from '../services/geminiService';
 import { DeliveryNote } from './DeliveryNote';
+import { useParams } from 'react-router-dom';
 
 const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string }> = ({ title, value, icon, color }) => (
   <div className="bg-white p-6 rounded-2xl shadow-lg flex items-center transform hover:scale-105 transition-transform duration-300">
@@ -19,148 +20,21 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
   </div>
 );
 
-const AddEntregadorModal: React.FC<{ onClose: () => void, onAdd: (data: { nome: string, telefone: string }) => void }> = ({ onClose, onAdd }) => {
-    const [nome, setNome] = useState('');
-    const [telefone, setTelefone] = useState('');
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (nome.trim()) {
-            onAdd({ nome: nome.trim(), telefone: telefone.trim() });
-            onClose();
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col" onClick={e => e.stopPropagation()}>
-                {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b bg-gray-50 rounded-t-xl">
-                    <div className="flex items-center">
-                        <UserPlus className="text-indigo-600 mr-3" size={28}/>
-                        <h2 className="text-2xl font-bold text-gray-800">Novo Entregador</h2>
-                    </div>
-                    <button onClick={onClose} className="p-2 text-gray-400 rounded-full hover:bg-gray-200 hover:text-gray-800 transition-colors">
-                        <X size={24} />
-                    </button>
-                </div>
-
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
-                        <input
-                            type="text"
-                            id="nome"
-                            value={nome}
-                            onChange={e => setNome(e.target.value)}
-                            className="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                            required
-                            placeholder="Ex: João da Silva"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-                        <input
-                            type="tel"
-                            id="telefone"
-                            value={telefone}
-                            onChange={e => setTelefone(e.target.value)}
-                            className="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="(11) 98765-4321"
-                        />
-                    </div>
-                    {/* Footer with buttons */}
-                    <div className="flex justify-end space-x-4 pt-4">
-                        <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancelar</button>
-                        <button type="submit" className="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Adicionar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-const EntregadoresView: React.FC = () => {
-    const { entregadores, pedidos, clientes, addEntregador } = useAppData();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const handleAddEntregador = (data: { nome: string; telefone: string }) => {
-        addEntregador(data);
-    };
-
-    return (
-        <div className="space-y-6">
-            {isModalOpen && <AddEntregadorModal onClose={() => setIsModalOpen(false)} onAdd={handleAddEntregador} />}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center">
-                    <Bike className="mr-3" size={32} />
-                    Controle de Entregadores
-                </h2>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors w-full sm:w-auto"
-                >
-                    <UserPlus className="mr-2" size={20} />
-                    Novo Entregador
-                </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {entregadores.map(entregador => {
-                    const entregas = pedidos.filter(p => p.entregadorId === entregador.id && p.status === StatusPedido.ENTREGUE);
-                    const totalEntregas = entregas.length;
-                    const valorTotalEntregue = entregas.reduce((sum, p) => sum + p.valorTotal, 0);
-                    const clientesAtendidosNomes = [...new Set(entregas.map(p => p.clienteId))]
-                        .map(cId => clientes.find(c => c.id === cId)?.nome)
-                        .filter(Boolean)
-                        .join(', ');
-
-                    return (
-                        <div key={entregador.id} className="bg-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-                            <div className="flex items-center mb-3">
-                                <div className="p-3 bg-indigo-100 rounded-full mr-3">
-                                    <UserCheck className="text-indigo-600" size={20}/>
-                                </div>
-                                <h3 className="text-lg font-bold text-indigo-800">{entregador.nome}</h3>
-                            </div>
-                            <div className="space-y-2 text-gray-700">
-                                {entregador.telefone && (
-                                    <p className="text-sm flex items-center">
-                                        <Phone size={14} className="mr-2 text-gray-500" />
-                                        <strong>Telefone:</strong>
-                                        <span className="font-semibold text-base ml-2">{entregador.telefone}</span>
-                                    </p>
-                                )}
-                                <p className="text-sm"><strong>Entregas Realizadas:</strong> <span className="font-semibold text-base">{totalEntregas}</span></p>
-                                <p className="text-sm"><strong>Valor Total Entregue:</strong> <span className="font-semibold text-base text-green-600">R$ {valorTotalEntregue.toFixed(2)}</span></p>
-                                <div>
-                                    <strong className="text-sm">Estabelecimentos Atendidos:</strong>
-                                    <p className="text-xs text-gray-500 italic mt-1 break-words">{clientesAtendidosNomes || 'Nenhuma entrega registrada'}</p>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
-
 const EntregadorDashboard: React.FC = () => {
     const { pedidos, clientes, entregadores, produtos } = useAppData();
     const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
+    const { entregadorId } = useParams<{ entregadorId: string }>();
 
-    // Em uma aplicação real, isso viria da autenticação.
-    // Assumimos que o usuário logado é o primeiro entregador.
-    const currentEntregador = entregadores.length > 0 ? entregadores[0] : null; 
+    const currentEntregador = entregadorId 
+        ? entregadores.find(e => e.id === entregadorId)
+        : (entregadores.length > 0 ? entregadores[0] : null);
 
     if (!currentEntregador) {
         return (
              <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <Bike className="w-16 h-16 text-gray-400 mb-4" />
-                <h2 className="text-2xl font-bold text-gray-800">Nenhum Entregador</h2>
-                <p className="text-gray-600 mt-2">Nenhum entregador foi cadastrado no sistema ainda.</p>
+                <h2 className="text-2xl font-bold text-gray-800">Entregador não encontrado</h2>
+                <p className="text-gray-600 mt-2">O ID do entregador não é válido ou nenhum entregador foi cadastrado.</p>
             </div>
         );
     }
@@ -204,7 +78,6 @@ const EntregadorDashboard: React.FC = () => {
                         const cliente = clientes.find(c => c.id === pedido.clienteId);
                         const itemsDescription = pedido.itens.map(item => {
                             const produto = produtos.find(p => p.id === item.produtoId);
-                            // Shorten name like "Pão de Queijo Tradicional 1kg" to "Pão de Queijo..."
                             const shortName = produto?.nome.split(' ').slice(0, 3).join(' ') || 'Produto';
                             return `${item.quantidade}x ${shortName}`;
                         }).join(', ');
@@ -240,13 +113,7 @@ const EntregadorDashboard: React.FC = () => {
     );
 };
 
-export const Dashboard: React.FC<{userRole: UserRole}> = ({userRole}) => {
-    
-    if (userRole === UserRole.ENTREGADOR) {
-        return <EntregadorDashboard />;
-    }
-    
-    // Admin Dashboard Logic
+const AdminDashboard: React.FC = () => {
     const { pedidos, produtos, clientes } = useAppData();
     const [summary, setSummary] = useState('');
     const [isLoadingSummary, setIsLoadingSummary] = useState(false);
@@ -363,4 +230,13 @@ export const Dashboard: React.FC<{userRole: UserRole}> = ({userRole}) => {
             </div>
         </div>
     );
+};
+
+
+export const Dashboard: React.FC<{userRole: UserRole}> = ({userRole}) => {
+    if (userRole === UserRole.ENTREGADOR) {
+        return <EntregadorDashboard />;
+    }
+    
+    return <AdminDashboard />;
 };

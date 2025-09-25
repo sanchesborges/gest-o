@@ -5,6 +5,7 @@ import { PlusCircle, ShoppingCart, Printer, Filter, Bike, X } from 'lucide-react
 import { Pedido, StatusPedido, StatusPagamento, UserRole } from '../types';
 import { OrderForm } from './OrderForm';
 import { DeliveryNote } from './DeliveryNote';
+import { useParams } from 'react-router-dom';
 
 const getStatusColor = (status: StatusPedido) => {
     switch(status) {
@@ -192,7 +193,8 @@ const OrderRow: React.FC<{ pedido: Pedido, onOpenNote: (pedido: Pedido) => void,
 };
 
 export const Orders: React.FC<{userRole: UserRole}> = ({userRole}) => {
-  const { pedidos, clientes, entregadores } = useAppData();
+  const { pedidos, clientes } = useAppData();
+  const { entregadorId } = useParams<{ entregadorId: string }>();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isNoteOpen, setIsNoteOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -201,10 +203,10 @@ export const Orders: React.FC<{userRole: UserRole}> = ({userRole}) => {
   const [statusFilter, setStatusFilter] = useState<StatusPedido | 'Todos'>('Todos');
   const [clientFilter, setClientFilter] = useState<string>('Todos');
 
-  // Filtra pedidos para o entregador logado
-  const currentEntregador = userRole === UserRole.ENTREGADOR && entregadores.length > 0 ? entregadores[0] : null;
-  const initialPedidos = currentEntregador
-    ? pedidos.filter(p => p.entregadorId === currentEntregador.id)
+  const isEntregadorView = userRole === UserRole.ENTREGADOR;
+  
+  const initialPedidos = isEntregadorView && entregadorId
+    ? pedidos.filter(p => p.entregadorId === entregadorId)
     : pedidos;
 
   const handleOpenNote = (pedido: Pedido) => {
