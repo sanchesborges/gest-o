@@ -1,18 +1,20 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Pedido, Produto, Cliente } from '../types';
 import jsPDF from 'jspdf';
 
 const API_KEY = process.env.API_KEY;
+let ai: GoogleGenAI | null = null;
 
-if (!API_KEY) {
-  console.warn("API key for Gemini not found. AI features will be disabled.");
+if (API_KEY) {
+  ai = new GoogleGenAI({ apiKey: API_KEY });
+} else {
+  console.warn("Chave de API do Gemini não encontrada. As funcionalidades de IA estarão desabilitadas.");
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
-
 export const generateSalesSummary = async (pedidos: Pedido[], produtos: Produto[], clientes: Cliente[]): Promise<string> => {
-    if (!API_KEY) {
-        return Promise.resolve("A funcionalidade de IA está desabilitada. Configure a chave de API do Gemini.");
+    if (!ai) {
+        return Promise.resolve("A funcionalidade de IA está desabilitada. Configure a chave de API do Gemini nas variáveis de ambiente do seu projeto.");
     }
 
     const promptData = pedidos.map(pedido => {
