@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { PlusCircle, Package, TrendingUp, TrendingDown } from 'lucide-react';
+import { PlusCircle, Package, TrendingUp, TrendingDown, Box } from 'lucide-react';
 import { Produto, UserRole } from '../types';
+import { Link } from 'react-router-dom';
 
 // Card component for mobile view
 const StockCard: React.FC<{ produto: Produto }> = ({ produto }) => {
@@ -114,15 +115,24 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
         {isModalOpen && <AddStockModal onClose={() => setIsModalOpen(false)} />}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <h2 className="text-3xl font-bold text-gray-800 flex items-center"><Package className="mr-3" size={32} /> Controle de Estoque</h2>
-            {userRole === UserRole.ADMIN && (
-                <button 
-                    onClick={() => setIsModalOpen(true)} 
-                    className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors w-full sm:w-auto"
+            <div className="flex flex-col sm:flex-row-reverse gap-2 w-full sm:w-auto">
+                {userRole === UserRole.ADMIN && (
+                    <button 
+                        onClick={() => setIsModalOpen(true)} 
+                        className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors w-full sm:w-auto"
+                    >
+                        <PlusCircle className="mr-2" size={20} />
+                        Registrar Entrada
+                    </button>
+                )}
+                <Link 
+                    to="/produtos"
+                    className="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-gray-700 transition-colors w-full sm:w-auto"
                 >
-                    <PlusCircle className="mr-2" size={20} />
-                    Registrar Entrada
-                </button>
-            )}
+                    <Box className="mr-2" size={20} />
+                    Produtos
+                </Link>
+            </div>
         </div>
         
         {/* Mobile View - Cards */}

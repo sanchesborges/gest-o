@@ -8,6 +8,7 @@ import { Clients } from './components/Clients';
 import { Financials } from './components/Financials';
 import { AppDataProvider } from './hooks/useAppData';
 import { UserRole } from './types';
+import { Products } from './components/Products';
 
 // Helper to get page title based on route
 const getPageTitle = (pathname: string) => {
@@ -17,6 +18,7 @@ const getPageTitle = (pathname: string) => {
       case '/pedidos': return 'Pedidos';
       case '/clientes': return 'Clientes';
       case '/financeiro': return 'Financeiro';
+      case '/produtos': return 'Produtos';
       default: return 'BakeryGest';
     }
 };
@@ -108,6 +110,7 @@ const App: React.FC = () => {
              <Routes>
                 <Route path="/" element={<Dashboard userRole={userRole} />} />
                 <Route path="/estoque" element={<Stock userRole={userRole} />} />
+                <Route path="/produtos" element={<Products userRole={userRole} />} />
                 <Route path="/pedidos" element={<Orders userRole={userRole} />} />
                 <Route path="/clientes" element={<Clients userRole={userRole} />} />
                 <Route 
