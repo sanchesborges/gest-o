@@ -1,0 +1,5 @@
+{
+  "name": "Gestão de Padaria Congelados",
+  "description": "Uma aplicação web para gerenciar vendas, estoque e finanças de um negócio de produtos de padaria congelados.",
+  "requestFramePermissions": []
+}
