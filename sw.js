@@ -1,9 +1,10 @@
-const CACHE_NAME = 'shirley-gest-v5'; // Versão do cache incrementada para forçar uma atualização completa.
+const CACHE_NAME = 'shirley-gest-v6'; // Incrementa a versão para forçar a atualização.
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json'
 ];
+const SCRIPT_TO_EXCLUDE_FROM_CACHE = '/index.tsx';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -33,9 +34,16 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Estratégia: Tenta a rede primeiro, se falhar, usa o cache.
-  // Isso garante que os usuários online sempre obtenham a versão mais recente,
-  // enquanto os usuários offline ainda podem usar o aplicativo com os dados em cache.
+  const requestUrl = new URL(event.request.url);
+
+  // Exclui o script principal do cache. Ele SEMPRE será buscado da rede.
+  // Isso resolve o problema do "código na tela preta" no ambiente de desenvolvimento.
+  if (requestUrl.pathname === SCRIPT_TO_EXCLUDE_FROM_CACHE) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Para todos os outros assets, usa a estratégia "Network falling back to cache".
   event.respondWith(
     fetch(event.request).then((networkResponse) => {
       // Se a requisição de rede for bem-sucedida, atualizamos o cache.
