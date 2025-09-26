@@ -1,13 +1,11 @@
-
-const CACHE_NAME = 'bakery-gest-v3'; // Versão do cache incrementada para forçar a atualização
+const CACHE_NAME = 'shirley-gest-v4'; // Nova versão do cache para forçar a atualização.
 const APP_SHELL_URLS = [
   '/',
   '/index.html',
-  '/manifest.json',
+  '/manifest.json'
 ];
-const CDN_URL_PATTERN = /^https:\/\/aistudiocdn\.com\//;
 
-// Ao instalar, armazena em cache o app shell principal
+// Instalação: Armazena em cache o "app shell" (os arquivos básicos da aplicação).
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -19,7 +17,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Ao ativar, limpa caches antigos e assume o controle
+// Ativação: Limpa caches antigos para evitar conflitos.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
@@ -37,68 +35,68 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Ao buscar (fetch), aplica diferentes estratégias de cache
+// Fetch: Intercepta as requisições de rede.
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
 
-  // Estratégia 1: Requisições de navegação (Network-first)
-  // Garante que o usuário obtenha o HTML mais recente se estiver online.
+  // Estratégia para requisições de navegação (ex: abrir o app).
+  // Tenta a rede primeiro para obter a versão mais recente do HTML.
   if (request.mode === 'navigate') {
     event.respondWith(
       (async () => {
         try {
           const networkResponse = await fetch(request);
-          // Se for bem-sucedido, armazena em cache e retorna
+          // Se funcionar, guarda a nova versão em cache.
           const cache = await caches.open(CACHE_NAME);
           cache.put(request, networkResponse.clone());
           return networkResponse;
         } catch (error) {
-          // Se a rede falhar, serve do cache
-          console.log('Falha no fetch para navegação; servindo do cache.', error);
+          // Se a rede falhar (offline), serve a página principal do cache.
+          console.log('Falha na navegação; servindo index.html do cache.', error);
           const cache = await caches.open(CACHE_NAME);
-          return await cache.match(request) || await cache.match('/index.html');
+          return await cache.match('/index.html');
         }
       })()
     );
     return;
   }
 
-  // Estratégia 2: Recursos da CDN (Cache-first)
-  // São versionados e imutáveis, então é seguro servir do cache.
-  if (CDN_URL_PATTERN.test(request.url)) {
-    event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then(c => c.put(request, networkResponse.clone()));
-          }
-          return networkResponse;
-        });
-      })
-    );
-    return;
-  }
-
-  // Estratégia 3: Arquivos JS/TSX próprios da aplicação e outros recursos (Network-first)
-  // Crucial para arquivos transpilados dinamicamente. Evita servir código antigo/quebrado do cache.
+  // Estratégia para outros recursos (scripts, etc.).
+  // Tenta a rede primeiro, e se falhar, usa o cache.
   event.respondWith(
     (async () => {
       try {
         const networkResponse = await fetch(request);
-        // Se for bem-sucedido, armazena em cache e retorna
         const cache = await caches.open(CACHE_NAME);
-        // Apenas armazena em cache respostas válidas para evitar erros de cache
-        if (networkResponse && networkResponse.status === 200) {
+        
+        // --- CORREÇÃO PARA O CONTENT-TYPE ---
+        // Se a requisição for para um arquivo .tsx/.ts, suspeitamos que o Content-Type
+        // pode estar incorreto. Forçamos para que seja um script JavaScript executável.
+        if (request.url.endsWith('.tsx') || request.url.endsWith('.ts')) {
+          const clonedResponse = networkResponse.clone();
+          const body = await clonedResponse.blob();
+          const headers = new Headers(clonedResponse.headers);
+          headers.set('Content-Type', 'application/javascript; charset=utf-8');
+
+          const correctedResponse = new Response(body, {
+            status: clonedResponse.status,
+            statusText: clonedResponse.statusText,
+            headers: headers
+          });
+          
+          // Armazena a resposta corrigida no cache.
+          cache.put(request, correctedResponse);
+        } else {
+          // Para todos os outros recursos, armazena em cache normalmente.
           cache.put(request, networkResponse.clone());
         }
+
+        // Retorna a resposta original da rede para o navegador.
         return networkResponse;
       } catch (error) {
-        // Se a rede falhar, tenta servir do cache
-        console.log(`Falha no fetch para o recurso (${request.url}); servindo do cache.`, error);
+        // A requisição de rede falhou (provavelmente offline).
+        // Tenta servir o recurso a partir do cache.
+        console.log(`Falha no fetch para ${request.url}; servindo do cache.`, error);
         return await caches.match(request);
       }
     })()
