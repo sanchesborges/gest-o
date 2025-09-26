@@ -1,26 +1,25 @@
-const CACHE_NAME = 'bakery-gest-v2';
+
+const CACHE_NAME = 'bakery-gest-v3'; // Versão do cache incrementada para forçar a atualização
 const APP_SHELL_URLS = [
   '/',
   '/index.html',
   '/manifest.json',
 ];
+const CDN_URL_PATTERN = /^https:\/\/aistudiocdn\.com\//;
 
-// On install, cache the core app shell
+// Ao instalar, armazena em cache o app shell principal
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Caching app shell');
+        console.log('ServiceWorker: Armazenando app shell em cache');
         return cache.addAll(APP_SHELL_URLS);
       })
-      .then(() => {
-        // Force the waiting service worker to become the active service worker.
-        return self.skipWaiting();
-      })
+      .then(() => self.skipWaiting())
   );
 });
 
-// On activate, clean up old caches and take control of the page
+// Ao ativar, limpa caches antigos e assume o controle
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
@@ -28,67 +27,79 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (cacheName !== CACHE_NAME) {
-              console.log('Deleting old cache:', cacheName);
+              console.log('ServiceWorker: Deletando cache antigo:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       })
-      .then(() => {
-        // Tell the active service worker to take control of the page immediately.
-        return self.clients.claim();
-      })
+      .then(() => self.clients.claim())
   );
 });
 
-// On fetch, apply caching strategies
+// Ao buscar (fetch), aplica diferentes estratégias de cache
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  const url = new URL(request.url);
 
-  // For navigation requests, use a network-first strategy.
-  // Fall back to the cached index.html if the network fails.
+  // Estratégia 1: Requisições de navegação (Network-first)
+  // Garante que o usuário obtenha o HTML mais recente se estiver online.
   if (request.mode === 'navigate') {
     event.respondWith(
       (async () => {
         try {
           const networkResponse = await fetch(request);
+          // Se for bem-sucedido, armazena em cache e retorna
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(request, networkResponse.clone());
           return networkResponse;
         } catch (error) {
-          console.log('Fetch failed; serving index.html from cache.', error);
+          // Se a rede falhar, serve do cache
+          console.log('Falha no fetch para navegação; servindo do cache.', error);
           const cache = await caches.open(CACHE_NAME);
-          return await cache.match('/index.html');
+          return await cache.match(request) || await cache.match('/index.html');
         }
       })()
     );
     return;
   }
 
-  // For non-navigation requests (assets like JS, CSS, fonts, etc.),
-  // use a cache-first strategy.
+  // Estratégia 2: Recursos da CDN (Cache-first)
+  // São versionados e imutáveis, então é seguro servir do cache.
+  if (CDN_URL_PATTERN.test(request.url)) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            caches.open(CACHE_NAME).then(c => c.put(request, networkResponse.clone()));
+          }
+          return networkResponse;
+        });
+      })
+    );
+    return;
+  }
+
+  // Estratégia 3: Arquivos JS/TSX próprios da aplicação e outros recursos (Network-first)
+  // Crucial para arquivos transpilados dinamicamente. Evita servir código antigo/quebrado do cache.
   event.respondWith(
     (async () => {
-      const cache = await caches.open(CACHE_NAME);
-      const cachedResponse = await cache.match(request);
-      
-      // If we have a cached response, return it.
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      
-      // Otherwise, fetch from the network.
       try {
         const networkResponse = await fetch(request);
-        // Cache the new response for future use.
-        // We only cache successful GET responses.
-        if (request.method === 'GET' && networkResponse && networkResponse.status === 200) {
-          // We must clone the response to cache it because responses are streams.
-          await cache.put(request, networkResponse.clone());
+        // Se for bem-sucedido, armazena em cache e retorna
+        const cache = await caches.open(CACHE_NAME);
+        // Apenas armazena em cache respostas válidas para evitar erros de cache
+        if (networkResponse && networkResponse.status === 200) {
+          cache.put(request, networkResponse.clone());
         }
         return networkResponse;
       } catch (error) {
-        console.log('Fetch failed; resource not in cache.', error);
-        // If fetch fails and the resource is not in cache, we can't do anything.
-        // The browser will handle the error.
+        // Se a rede falhar, tenta servir do cache
+        console.log(`Falha no fetch para o recurso (${request.url}); servindo do cache.`, error);
+        return await caches.match(request);
       }
     })()
   );

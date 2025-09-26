@@ -1,19 +1,19 @@
 {
-  "name": "Gestão de Padaria Congelados",
-  "short_name": "BakeryGest",
-  "description": "Uma aplicação web para gerenciar vendas, estoque e finanças de um negócio de produtos de padaria congelados.",
+  "name": "Shirley",
+  "short_name": "Shirley",
+  "description": "Shirley - Gestão de Padaria Congelados.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#f0f9ff",
   "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIyMDAiIGZpbGw9IiNGQkJGMjQiLz48Y2lyY2xlIGN4PSIxODAiIGN5PSIxODAiIHI9IjMwIiBmaWxsPSIjRjU5RTBCIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjxjaXJjbGUgY3g9IjMwMCIgY3k9IjIwMCIgcj0iNDAiIGZpbGw9IiNGNTlFMEIiIGZpbGwtb3BhY2l0eT0iMC41Ii8+PGNpcmNsZSBjeD0iMjIwIiBjeT0iMzEwIiByPSIzNSIgZmlsbD0iI0Y1OUUwQiIgZmlsbC1vcGFjaXR5PSIwLjUiLz48Y2lyY2xlIGN4PSIzNDAiIGN5PSIzMDAiIHI9IjI1IiBmaWxsPSIjRjU5RTBCIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjwvc3ZnPg==",
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIyNDAiIGZpbGw9IiNmNTllMGIiLz48Y2lyY2xlIGN4PSIxODAiIGN5PSIxODAiIHI9IjQwIiBmaWxsPSIjOEI1NzJBIi8+PGNpcmNsZSBjeD0iMzQwIiBjeT0iMjAwIiByPSI1MCIgZmlsbD0iIzhCNTcyQSIvPjxjaXJjbGUgY3g9IjI0MCIgY3k9IjM1MCIgcj0iNDUiIGZpbGw9IiM4QjU3MkEiLz48Y2lyY2xlIGN4PSI0MDAiIGN5PSIzMjAiIHI9IjM1IiBmaWxsPSIjOEI1NzJBIi8+PGNpcmNsZSBjeD0iMTUwIiBjeT0iMzAwIiByPSIzMCIgZmlsbD0iIzhCNTcyQSIvPjxjaXJjbGUgY3g9IjI4MCIgY3k9IjE0MCIgcj0iMjUiIGZpbGw9IiM4QjU3MkEiLz48L3N2Zz4=",
       "sizes": "192x192",
       "type": "image/svg+xml"
     },
     {
-      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIyMDAiIGZpbGw9IiNGQkJGMjQiLz48Y2lyY2xlIGN4PSIxODAiIGN5PSIxODAiIHI9IjMwIiBmaWxsPSIjRjU5RTBCIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjxjaXJjbGUgY3g9IjMwMCIgY3k9IjIwMCIgcj0iNDAiIGZpbGw9IiNGNTlFMEIiIGZpbGwtb3BhY2l0eT0iMC41Ii8+PGNpcmNsZSBjeD0iMjIwIiBjeT0iMzEwIiByPSIzNSIgZmlsbD0iI0Y1OUUwQiIgZmlsbC1vcGFjaXR5PSIwLjUiLz48Y2lyY2xlIGN4PSIzNDAiIGN5PSIzMDAiIHI9IjI1IiBmaWxsPSIjRjU5RTBCIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjwvc3ZnPg==",
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIyNDAiIGZpbGw9IiNmNTllMGIiLz48Y2lyY2xlIGN4PSIxODAiIGN5PSIxODAiIHI9IjQwIiBmaWxsPSIjOEI1NzJBIi8+PGNpcmNsZSBjeD0iMzQwIiBjeT0iMjAwIiByPSI1MCIgZmlsbD0iIzhCNTcyQSIvPjxjaXJjbGUgY3g9IjI0MCIgY3k9IjM1MCIgcj0iNDUiIGZpbGw9IiM4QjU3MkEiLz48Y2lyY2xlIGN4PSI0MDAiIGN5PSIzMjAiIHI9IjM1IiBmaWxsPSIjOEI1NzJBIi8+PGNpcmNsZSBjeD0iMTUwIiBjeT0iMzAwIiByPSIzMCIgZmlsbD0iIzhCNTcyQSIvPjxjaXJjbGUgY3g9IjI4MCIgY3k9IjE0MCIgcj0iMjUiIGZpbGw9IiM4QjU3MkEiLz48L3N2Zz4=",
       "sizes": "512x512",
       "type": "image/svg+xml"
     }
