@@ -1,104 +1,58 @@
-const CACHE_NAME = 'shirley-gest-v4'; // Nova versão do cache para forçar a atualização.
-const APP_SHELL_URLS = [
+const CACHE_NAME = 'shirley-gest-v5'; // Versão do cache incrementada para forçar uma atualização completa.
+const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json'
 ];
 
-// Instalação: Armazena em cache o "app shell" (os arquivos básicos da aplicação).
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('ServiceWorker: Armazenando app shell em cache');
-        return cache.addAll(APP_SHELL_URLS);
-      })
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[Service Worker] Pré-armazenando o App Shell em cache.');
+      return cache.addAll(STATIC_ASSETS);
+    }).then(() => {
+        // Força o novo service worker a se tornar ativo imediatamente.
+        return self.skipWaiting();
+    })
   );
 });
 
-// Ativação: Limpa caches antigos para evitar conflitos.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME) {
-              console.log('ServiceWorker: Deletando cache antigo:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-      .then(() => self.clients.claim())
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('[Service Worker] Deletando cache antigo:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim()) // Torna-se o controlador para todos os clientes imediatamente.
   );
 });
 
-// Fetch: Intercepta as requisições de rede.
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-
-  // Estratégia para requisições de navegação (ex: abrir o app).
-  // Tenta a rede primeiro para obter a versão mais recente do HTML.
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      (async () => {
-        try {
-          const networkResponse = await fetch(request);
-          // Se funcionar, guarda a nova versão em cache.
-          const cache = await caches.open(CACHE_NAME);
-          cache.put(request, networkResponse.clone());
-          return networkResponse;
-        } catch (error) {
-          // Se a rede falhar (offline), serve a página principal do cache.
-          console.log('Falha na navegação; servindo index.html do cache.', error);
-          const cache = await caches.open(CACHE_NAME);
-          return await cache.match('/index.html');
-        }
-      })()
-    );
-    return;
-  }
-
-  // Estratégia para outros recursos (scripts, etc.).
-  // Tenta a rede primeiro, e se falhar, usa o cache.
+  // Estratégia: Tenta a rede primeiro, se falhar, usa o cache.
+  // Isso garante que os usuários online sempre obtenham a versão mais recente,
+  // enquanto os usuários offline ainda podem usar o aplicativo com os dados em cache.
   event.respondWith(
-    (async () => {
-      try {
-        const networkResponse = await fetch(request);
-        const cache = await caches.open(CACHE_NAME);
-        
-        // --- CORREÇÃO PARA O CONTENT-TYPE ---
-        // Se a requisição for para um arquivo .tsx/.ts, suspeitamos que o Content-Type
-        // pode estar incorreto. Forçamos para que seja um script JavaScript executável.
-        if (request.url.endsWith('.tsx') || request.url.endsWith('.ts')) {
-          const clonedResponse = networkResponse.clone();
-          const body = await clonedResponse.blob();
-          const headers = new Headers(clonedResponse.headers);
-          headers.set('Content-Type', 'application/javascript; charset=utf-8');
-
-          const correctedResponse = new Response(body, {
-            status: clonedResponse.status,
-            statusText: clonedResponse.statusText,
-            headers: headers
-          });
-          
-          // Armazena a resposta corrigida no cache.
-          cache.put(request, correctedResponse);
-        } else {
-          // Para todos os outros recursos, armazena em cache normalmente.
-          cache.put(request, networkResponse.clone());
+    fetch(event.request).then((networkResponse) => {
+      // Se a requisição de rede for bem-sucedida, atualizamos o cache.
+      const responseToCache = networkResponse.clone();
+      caches.open(CACHE_NAME).then((cache) => {
+        // Armazena em cache apenas requisições GET bem-sucedidas.
+        if (event.request.method === 'GET' && responseToCache.status === 200) {
+          cache.put(event.request, responseToCache);
         }
-
-        // Retorna a resposta original da rede para o navegador.
-        return networkResponse;
-      } catch (error) {
-        // A requisição de rede falhou (provavelmente offline).
-        // Tenta servir o recurso a partir do cache.
-        console.log(`Falha no fetch para ${request.url}; servindo do cache.`, error);
-        return await caches.match(request);
-      }
-    })()
+      });
+      // Retorna a resposta da rede para o navegador.
+      return networkResponse;
+    }).catch(() => {
+      // Se a requisição de rede falhar (provavelmente offline),
+      // tenta servir a resposta a partir do cache.
+      console.log(`[Service Worker] Requisição para ${event.request.url} falhou. Servindo do cache.`);
+      return caches.match(event.request);
+    })
   );
 });
