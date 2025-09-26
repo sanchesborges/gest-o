@@ -1,90 +1,95 @@
-const CACHE_NAME = 'bakery-gest-v1';
-const urlsToCache = [
+const CACHE_NAME = 'bakery-gest-v2';
+const APP_SHELL_URLS = [
   '/',
   '/index.html',
-  '/index.tsx',
-  '/App.tsx',
-  '/types.ts',
-  '/constants.ts',
-  '/hooks/useAppData.ts',
-  '/services/geminiService.ts',
-  '/components/Dashboard.tsx',
-  '/components/Stock.tsx',
-  '/components/Orders.tsx',
-  '/components/Clients.tsx',
-  '/components/Financials.tsx',
-  '/components/OrderForm.tsx',
-  '/components/DeliveryNote.tsx',
-  '/components/Products.tsx',
   '/manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://aistudiocdn.com/react@^19.1.1',
-  'https://aistudiocdn.com/react-router-dom@^7.9.2',
-  'https://aistudiocdn.com/react-dom@^19.1.1/',
-  'https://aistudiocdn.com/@google/genai@^1.20.0',
-  'https://aistudiocdn.com/jspdf@^3.0.3',
-  'https://aistudiocdn.com/lucide-react@^0.544.0',
-  'https://aistudiocdn.com/recharts@^3.2.1',
-  'https://aistudiocdn.com/react-signature-canvas@^1.1.0-alpha.2'
 ];
 
-self.addEventListener('install', event => {
+// On install, cache the core app shell
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        // Use a request with no-cache to ensure we get the latest from the network.
-        const requests = urlsToCache.map(url => new Request(url, {cache: 'no-cache'}));
-        return cache.addAll(requests);
+      .then((cache) => {
+        console.log('Caching app shell');
+        return cache.addAll(APP_SHELL_URLS);
+      })
+      .then(() => {
+        // Force the waiting service worker to become the active service worker.
+        return self.skipWaiting();
       })
   );
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        
-        // Clone the request because it's a stream and can only be consumed once.
-        const fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest).then(
-          response => {
-            // Check if we received a valid response
-            if(!response || response.status !== 200 || response.type !== 'basic' && response.type !== 'cors') {
-              return response;
+// On activate, clean up old caches and take control of the page
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
             }
-
-            // Clone the response because it's a stream and can only be consumed once.
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
+          })
         );
       })
-    );
+      .then(() => {
+        // Tell the active service worker to take control of the page immediately.
+        return self.clients.claim();
+      })
+  );
 });
 
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+// On fetch, apply caching strategies
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+
+  // For navigation requests, use a network-first strategy.
+  // Fall back to the cached index.html if the network fails.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        try {
+          const networkResponse = await fetch(request);
+          return networkResponse;
+        } catch (error) {
+          console.log('Fetch failed; serving index.html from cache.', error);
+          const cache = await caches.open(CACHE_NAME);
+          return await cache.match('/index.html');
+        }
+      })()
+    );
+    return;
+  }
+
+  // For non-navigation requests (assets like JS, CSS, fonts, etc.),
+  // use a cache-first strategy.
+  event.respondWith(
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cachedResponse = await cache.match(request);
+      
+      // If we have a cached response, return it.
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      
+      // Otherwise, fetch from the network.
+      try {
+        const networkResponse = await fetch(request);
+        // Cache the new response for future use.
+        // We only cache successful GET responses.
+        if (request.method === 'GET' && networkResponse && networkResponse.status === 200) {
+          // We must clone the response to cache it because responses are streams.
+          await cache.put(request, networkResponse.clone());
+        }
+        return networkResponse;
+      } catch (error) {
+        console.log('Fetch failed; resource not in cache.', error);
+        // If fetch fails and the resource is not in cache, we can't do anything.
+        // The browser will handle the error.
+      }
+    })()
   );
 });
