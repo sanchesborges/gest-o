@@ -1,14 +1,16 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Pedido, StatusPedido } from '../types';
 import { useAppData } from '../hooks/useAppData';
 import SignatureCanvas from 'react-signature-canvas';
 import jsPDF from 'jspdf';
-import { Download, Edit, Trash2, X, FileText, Send } from 'lucide-react';
+import { Download, Trash2, X, FileText, Send, Share2, Image as ImageIcon } from 'lucide-react';
 
 export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ pedido, onClose }) => {
   const { clientes, produtos, updatePedidoStatus } = useAppData();
   const cliente = clientes.find(c => c.id === pedido.clienteId);
   const sigCanvas = useRef<SignatureCanvas>(null);
+  const noteRef = useRef<HTMLDivElement>(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   
   const clearSignature = () => {
     sigCanvas.current?.clear();
@@ -79,6 +81,85 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
     const pdf = generatePdfInstance();
     pdf.save(`romaneio_${pedido.id}.pdf`);
   };
+
+  const captureAsImage = async (): Promise<string> => {
+    if (!noteRef.current) return '';
+    
+    setIsGeneratingImage(true);
+    
+    try {
+      // Usar html2canvas para capturar a nota
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(noteRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+      
+      const imageData = canvas.toDataURL('image/png');
+      setIsGeneratingImage(false);
+      return imageData;
+    } catch (error) {
+      console.error('Erro ao capturar imagem:', error);
+      setIsGeneratingImage(false);
+      return '';
+    }
+  };
+
+  const handleShareAsImage = async () => {
+    const imageData = await captureAsImage();
+    if (!imageData) {
+      alert('Erro ao gerar imagem da nota');
+      return;
+    }
+
+    // Converter base64 para blob
+    const blob = await (await fetch(imageData)).blob();
+    const file = new File([blob], `nota_${pedido.id}.png`, { type: 'image/png' });
+
+    // Tentar usar a API de compartilhamento nativa
+    if (navigator.share && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: `Nota de Entrega - ${cliente?.nome}`,
+          text: `Nota de Entrega - Pedido ${pedido.id}`,
+          files: [file],
+        });
+      } catch (error) {
+        console.error('Erro ao compartilhar:', error);
+      }
+    } else {
+      // Fallback: baixar a imagem
+      const link = document.createElement('a');
+      link.href = imageData;
+      link.download = `nota_${pedido.id}.png`;
+      link.click();
+    }
+  };
+
+  const handleShareWhatsApp = async () => {
+    const telefone = cliente?.telefone?.replace(/\D/g, '');
+    
+    const itemsText = pedido.itens.map(item => {
+      const produto = produtos.find(p => p.id === item.produtoId);
+      return `${produto?.nome || 'N/A'} - ${item.quantidade}x R$ ${item.precoUnitario.toFixed(2)} = R$ ${(item.quantidade * item.precoUnitario).toFixed(2)}`;
+    }).join('%0A');
+
+    const message = `*NOTA DE ENTREGA - SHIRLEY*%0A%0A` +
+                    `*Pedido:* ${pedido.id.toUpperCase()}%0A` +
+                    `*Cliente:* ${cliente?.nome}%0A` +
+                    `*Data:* ${pedido.data.toLocaleDateString('pt-BR')}%0A` +
+                    `*Endereço:* ${cliente?.endereco}%0A%0A` +
+                    `*ITENS:*%0A${itemsText}%0A%0A` +
+                    `*VALOR TOTAL: R$ ${pedido.valorTotal.toFixed(2)}*%0A%0A` +
+                    `_Obrigado pela preferência!_`;
+
+    const whatsappUrl = telefone 
+      ? `https://wa.me/55${telefone}?text=${message}`
+      : `https://wa.me/?text=${message}`;
+    
+    window.open(whatsappUrl, '_blank');
+  };
   
   const handleConfirmAndSend = () => {
     if (sigCanvas.current && sigCanvas.current.isEmpty()) {
@@ -125,12 +206,37 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
         </div>
 
         {/* Content */}
-        <div className="flex-grow overflow-y-auto p-6 space-y-6">
-            <div className="p-4 border rounded-lg bg-slate-50 space-y-2">
-                <p><strong>Cliente:</strong><span className="text-gray-700 block">{cliente?.nome}</span></p>
-                <p><strong>Pedido:</strong><span className="text-gray-700 block">{pedido.id.toUpperCase()}</span></p>
-                <p><strong>Endereço:</strong><span className="text-gray-700 block">{cliente?.endereco}</span></p>
-                <p><strong>Data:</strong><span className="text-gray-700 block">{pedido.data.toLocaleDateString('pt-BR')}</span></p>
+        <div ref={noteRef} className="flex-grow overflow-y-auto p-6 space-y-6 bg-white">
+            {/* Cabeçalho da Nota */}
+            <div className="text-center border-b-2 border-indigo-600 pb-4 mb-4">
+                <h1 className="text-3xl font-bold text-indigo-600">SHIRLEY</h1>
+                <p className="text-sm text-gray-600">Produtos de Qualidade</p>
+                <p className="text-xs text-gray-500 mt-1">NOTA DE ENTREGA</p>
+            </div>
+
+            <div className="p-4 border-2 border-gray-300 rounded-lg bg-gray-50 space-y-2">
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <p className="text-xs text-gray-500 uppercase">Pedido</p>
+                        <p className="font-bold text-gray-800">{pedido.id.toUpperCase()}</p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-500 uppercase">Data</p>
+                        <p className="font-bold text-gray-800">{pedido.data.toLocaleDateString('pt-BR')}</p>
+                    </div>
+                </div>
+                <div className="border-t pt-2">
+                    <p className="text-xs text-gray-500 uppercase">Cliente</p>
+                    <p className="font-bold text-gray-800">{cliente?.nome}</p>
+                </div>
+                <div>
+                    <p className="text-xs text-gray-500 uppercase">Endereço</p>
+                    <p className="text-gray-700">{cliente?.endereco}</p>
+                </div>
+                <div>
+                    <p className="text-xs text-gray-500 uppercase">Telefone</p>
+                    <p className="text-gray-700">{cliente?.telefone}</p>
+                </div>
             </div>
             
             {/* Mobile Items View */}
@@ -204,14 +310,45 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
         </div>
         
         {/* Footer */}
-        <div className="flex flex-col-reverse sm:flex-row justify-between items-center flex-shrink-0 p-6 bg-gray-50 rounded-b-xl border-t">
-          <button onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 w-full mt-2 sm:w-auto sm:mt-0">Fechar</button>
-          <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
-            <button onClick={handleGeneratePdf} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors"><Download size={18} className="mr-2"/> Baixar PDF</button>
-            {pedido.status !== StatusPedido.ENTREGUE && (
-                <button onClick={handleConfirmAndSend} className="bg-green-600 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center hover:bg-green-700 transition-colors text-base"><Send size={18} className="mr-2"/> Confirmar e Enviar</button>
-            )}
+        <div className="flex flex-col gap-3 flex-shrink-0 p-6 bg-gray-50 rounded-b-xl border-t">
+          <div className="flex flex-col sm:flex-row w-full gap-2">
+            <button 
+              onClick={handleShareAsImage} 
+              disabled={isGeneratingImage}
+              className="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-purple-700 transition-colors disabled:bg-purple-300"
+            >
+              <ImageIcon size={18} className="mr-2"/> 
+              {isGeneratingImage ? 'Gerando...' : 'Compartilhar Imagem'}
+            </button>
+            <button 
+              onClick={handleShareWhatsApp} 
+              className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-green-700 transition-colors"
+            >
+              <Share2 size={18} className="mr-2"/> WhatsApp
+            </button>
+            <button 
+              onClick={handleGeneratePdf} 
+              className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors"
+            >
+              <Download size={18} className="mr-2"/> PDF
+            </button>
           </div>
+          
+          {pedido.status !== StatusPedido.ENTREGUE && (
+            <button 
+              onClick={handleConfirmAndSend} 
+              className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors text-base w-full"
+            >
+              <Send size={20} className="mr-2"/> Confirmar Entrega
+            </button>
+          )}
+          
+          <button 
+            onClick={onClose} 
+            className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 w-full"
+          >
+            Fechar
+          </button>
         </div>
       </div>
     </div>

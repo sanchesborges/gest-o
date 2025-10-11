@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { UserPlus, X, Bike, UserCheck, Phone, Share2, Check } from 'lucide-react';
+import { UserPlus, X, Bike, UserCheck, Phone, Share2, Check, MessageCircle } from 'lucide-react';
 import { StatusPedido } from '../types';
 
 const AddEntregadorModal: React.FC<{ onClose: () => void, onAdd: (data: { nome: string, telefone: string }) => void }> = ({ onClose, onAdd }) => {
@@ -76,8 +76,6 @@ export const Entregadores: React.FC = () => {
     };
     
     const handleShare = async (entregadorId: string, entregadorNome: string) => {
-        // Use the URL constructor for a robust way to build the share link.
-        // This avoids issues with string manipulation, like missing slashes or extra characters.
         const url = new URL(window.location.href);
         url.hash = `#/entregador/${entregadorId}`;
         const link = url.href;
@@ -105,8 +103,36 @@ export const Entregadores: React.FC = () => {
         }
     };
 
+    const handleShareWhatsApp = (entregador: { id: string; nome: string; telefone?: string }) => {
+        const url = new URL(window.location.href);
+        url.hash = `#/entregador/${entregador.id}`;
+        const link = url.href;
+
+        const pendingDeliveries = pedidos.filter(p => 
+            p.entregadorId === entregador.id && p.status === StatusPedido.PENDENTE
+        );
+
+        const message = `*SHIRLEY - Portal do Entregador*%0A%0A` +
+                        `Olá, *${entregador.nome.split(' ')[0]}*!%0A%0A` +
+                        `Você tem *${pendingDeliveries.length} ${pendingDeliveries.length === 1 ? 'entrega pendente' : 'entregas pendentes'}* para hoje.%0A%0A` +
+                        `Acesse seu portal de entregas clicando no link abaixo:%0A` +
+                        `${link}%0A%0A` +
+                        `_Neste portal você pode:_%0A` +
+                        `✅ Ver suas entregas pendentes%0A` +
+                        `✅ Confirmar entregas%0A` +
+                        `✅ Obter assinatura dos clientes%0A%0A` +
+                        `_Boas entregas!_`;
+
+        const telefone = entregador.telefone?.replace(/\D/g, '');
+        const whatsappUrl = telefone 
+            ? `https://wa.me/55${telefone}?text=${message}`
+            : `https://wa.me/?text=${message}`;
+        
+        window.open(whatsappUrl, '_blank');
+    };
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-6 pt-8">
             {isModalOpen && <AddEntregadorModal onClose={() => setIsModalOpen(false)} onAdd={handleAddEntregador} />}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center">
@@ -132,24 +158,29 @@ export const Entregadores: React.FC = () => {
                         .filter(Boolean)
                         .join(', ');
 
+                    const pendingDeliveries = pedidos.filter(p => 
+                        p.entregadorId === entregador.id && p.status === StatusPedido.PENDENTE
+                    );
+
                     return (
-                        <div key={entregador.id} className="bg-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-                            <div className="flex justify-between items-center mb-3">
+                        <div key={entregador.id} className="bg-white p-5 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+                            <div className="flex justify-between items-start mb-4">
                                 <div className="flex items-center">
                                     <div className="p-3 bg-indigo-100 rounded-full mr-3">
-                                        <UserCheck className="text-indigo-600" size={20}/>
+                                        <UserCheck className="text-indigo-600" size={24}/>
                                     </div>
-                                    <h3 className="text-lg font-bold text-indigo-800">{entregador.nome}</h3>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-indigo-800">{entregador.nome}</h3>
+                                        {pendingDeliveries.length > 0 && (
+                                            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-semibold">
+                                                {pendingDeliveries.length} pendente{pendingDeliveries.length > 1 ? 's' : ''}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                                <button
-                                    onClick={() => handleShare(entregador.id, entregador.nome)}
-                                    className="p-2 text-gray-500 rounded-full hover:bg-gray-200 hover:text-gray-800 transition-colors"
-                                    aria-label="Compartilhar Acesso"
-                                >
-                                    {copiedId === entregador.id ? <Check size={20} className="text-green-500" /> : <Share2 size={20} />}
-                                </button>
                             </div>
-                            <div className="space-y-2 text-gray-700">
+                            
+                            <div className="space-y-2 text-gray-700 mb-4">
                                 {entregador.telefone && (
                                     <p className="text-sm flex items-center">
                                         <Phone size={14} className="mr-2 text-gray-500" />
@@ -163,6 +194,32 @@ export const Entregadores: React.FC = () => {
                                     <strong className="text-sm">Estabelecimentos Atendidos:</strong>
                                     <p className="text-xs text-gray-500 italic mt-1 break-words">{clientesAtendidosNomes || 'Nenhuma entrega registrada'}</p>
                                 </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-3 border-t">
+                                <button
+                                    onClick={() => handleShareWhatsApp(entregador)}
+                                    className="flex-1 bg-green-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-green-700 transition-colors text-sm"
+                                >
+                                    <MessageCircle size={16} className="mr-2" />
+                                    WhatsApp
+                                </button>
+                                <button
+                                    onClick={() => handleShare(entregador.id, entregador.nome)}
+                                    className="flex-1 bg-indigo-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors text-sm"
+                                >
+                                    {copiedId === entregador.id ? (
+                                        <>
+                                            <Check size={16} className="mr-2" />
+                                            Copiado!
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Share2 size={16} className="mr-2" />
+                                            Copiar Link
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         </div>
                     );

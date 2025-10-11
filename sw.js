@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shirley-gest-v6'; // Incrementa a versão para forçar a atualização.
+const CACHE_NAME = 'shirley-gest-v7'; // Incrementa a versão para forçar a atualização.
 const STATIC_ASSETS = [
   '/',
   '/index.html',

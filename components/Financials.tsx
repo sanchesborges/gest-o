@@ -137,7 +137,7 @@ export const Financials: React.FC<{userRole: UserRole}> = ({userRole}) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 pt-8">
       {selectedOrder && <AddPaymentModal pedido={selectedOrder} onClose={() => setSelectedOrder(null)} />}
       <h2 className="text-3xl font-bold text-gray-800 flex items-center"><DollarSign className="mr-3" size={32} /> Contas a Receber</h2>
       

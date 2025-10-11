@@ -52,18 +52,29 @@ const EntregadorDashboard: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-6 pt-8">
             {selectedOrder && <DeliveryNote pedido={selectedOrder} onClose={handleCloseNote} />}
 
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div>
-                    <h2 className="text-3xl font-bold text-gray-800">Minhas Entregas</h2>
-                    <p className="text-gray-600">Olá, {currentEntregador.nome.split(' ')[0]}! Aqui estão seus pedidos pendentes.</p>
+            {/* Banner de Boas-vindas */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-2xl shadow-lg">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl sm:text-3xl font-bold mb-2">
+                            Olá, {currentEntregador.nome.split(' ')[0]}! 👋
+                        </h2>
+                        <p className="text-indigo-100">
+                            Bem-vindo ao seu portal de entregas
+                        </p>
+                    </div>
+                    <div className="text-center bg-white/20 backdrop-blur-sm p-4 rounded-xl">
+                        <p className="text-sm font-medium text-indigo-100">Pendentes</p>
+                        <p className="text-4xl font-bold">{myPendingDeliveries.length}</p>
+                    </div>
                 </div>
-                <div className="text-center bg-white p-3 rounded-xl shadow shrink-0">
-                    <p className="text-sm font-medium text-gray-500">Entregas Hoje</p>
-                    <p className="text-3xl font-bold text-indigo-600">{myPendingDeliveries.length}</p>
-                </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold text-gray-800">Suas Entregas</h3>
             </div>
 
             {myPendingDeliveries.length === 0 ? (
@@ -190,7 +201,7 @@ const AdminDashboard: React.FC = () => {
                     <h3 className="text-xl font-semibold text-gray-700 mb-4">Produtos Mais Vendidos (Unidades)</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
-                            <Pie data={pieData} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" nameKey="name" label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+                            <Pie data={pieData} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" nameKey="name" label={(entry: any) => `${entry.name} (${(entry.percent * 100).toFixed(0)}%)`}>
                                 {pieData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}

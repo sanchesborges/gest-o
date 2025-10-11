@@ -47,7 +47,7 @@ export const Clients: React.FC<{userRole: UserRole}> = ({userRole}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 pt-8">
       {isModalOpen && <AddClientModal onClose={() => setIsModalOpen(false)} />}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center"><Users className="mr-3" size={32} /> Cadastro de Clientes</h2>

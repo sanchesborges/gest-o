@@ -232,7 +232,7 @@ export const Orders: React.FC<{userRole: UserRole}> = ({userRole}) => {
   }).sort((a,b) => b.data.getTime() - a.data.getTime());
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 pt-8">
       {isFormOpen && <OrderForm onClose={() => setIsFormOpen(false)} />}
       {isNoteOpen && selectedOrder && <DeliveryNote pedido={selectedOrder} onClose={handleCloseModals} />}
       {isAssignModalOpen && selectedOrder && userRole === UserRole.ADMIN && <AssignDriverModal pedido={selectedOrder} onClose={handleCloseModals} />}

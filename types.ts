@@ -2,6 +2,10 @@ export enum TipoProduto {
   PAO_DE_QUEIJO = 'Pão de Queijo',
   BISCOITO_QUEIJO = 'Biscoito de Queijo',
   BISCOITO_FERRADURA = 'Biscoito Ferradura',
+  BISCOITO_POLVILHO = 'Biscoito Polvilho',
+  BISCOITO_GOMA = 'Biscoito Goma',
+  FUBA = 'Fubá',
+  RAPADURA = 'Rapadura',
 }
 
 export enum TamanhoPacote {
@@ -13,7 +17,7 @@ export interface Produto {
   id: string;
   nome: string;
   tipo: TipoProduto;
-  tamanhoPacote: TamanhoPacote;
+  tamanhoPacote: TamanhoPacote | string;
   precoPadrao: number;
   estoqueMinimo: number;
   estoqueAtual: number;
@@ -23,11 +27,16 @@ export enum TipoCliente {
   MERCADO = 'Mercado',
   PADARIA = 'Padaria',
   VAREJO = 'Varejo',
+  RESTAURANTE = 'Restaurante',
+  OUTROS = 'Outros',
 }
 
 export enum CondicaoPagamento {
   A_VISTA = 'À vista',
   PROXIMA_ENTREGA = 'Pagar na próxima entrega',
+  SETE_DIAS = '7 dias',
+  QUINZE_DIAS = '15 dias',
+  TRINTA_DIAS = '30 dias',
 }
 
 export interface Cliente {

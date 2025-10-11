@@ -1,17 +1,35 @@
 import { Produto, Cliente, Pedido, EntradaEstoque, Pagamento, TipoProduto, TamanhoPacote, TipoCliente, CondicaoPagamento, StatusPedido, StatusPagamento, MetodoPagamento, Entregador } from './types';
 
 export const MOCK_PRODUTOS: Produto[] = [
-  { id: 'p1', nome: 'Pão de Queijo Tradicional 1kg', tipo: TipoProduto.PAO_DE_QUEIJO, tamanhoPacote: TamanhoPacote.UM_KG, precoPadrao: 25.00, estoqueMinimo: 20, estoqueAtual: 50 },
-  { id: 'p2', nome: 'Pão de Queijo Tradicional 5kg', tipo: TipoProduto.PAO_DE_QUEIJO, tamanhoPacote: TamanhoPacote.CINCO_KG, precoPadrao: 110.00, estoqueMinimo: 10, estoqueAtual: 15 },
-  { id: 'p3', nome: 'Biscoito de Queijo 1kg', tipo: TipoProduto.BISCOITO_QUEIJO, tamanhoPacote: TamanhoPacote.UM_KG, precoPadrao: 28.00, estoqueMinimo: 15, estoqueAtual: 12 },
-  { id: 'p4', nome: 'Biscoito de Queijo 5kg', tipo: TipoProduto.BISCOITO_QUEIJO, tamanhoPacote: TamanhoPacote.CINCO_KG, precoPadrao: 125.00, estoqueMinimo: 8, estoqueAtual: 20 },
-  { id: 'p5', nome: 'Biscoito Ferradura 1kg', tipo: TipoProduto.BISCOITO_FERRADURA, tamanhoPacote: TamanhoPacote.UM_KG, precoPadrao: 30.00, estoqueMinimo: 15, estoqueAtual: 30 },
+  { id: 'p1', nome: 'Biscoito Polvilho', tipo: TipoProduto.BISCOITO_POLVILHO, tamanhoPacote: TamanhoPacote.UM_KG, precoPadrao: 16.00, estoqueMinimo: 20, estoqueAtual: 100 },
+  { id: 'p2', nome: 'Biscoito Goma', tipo: TipoProduto.BISCOITO_GOMA, tamanhoPacote: TamanhoPacote.UM_KG, precoPadrao: 16.00, estoqueMinimo: 10, estoqueAtual: 50 },
+  { id: 'p3', nome: 'Fubá', tipo: TipoProduto.FUBA, tamanhoPacote: TamanhoPacote.UM_KG, precoPadrao: 15.00, estoqueMinimo: 15, estoqueAtual: 80 },
+  { id: 'p4', nome: 'Pão de Queijo', tipo: TipoProduto.PAO_DE_QUEIJO, tamanhoPacote: TamanhoPacote.UM_KG, precoPadrao: 15.00, estoqueMinimo: 25, estoqueAtual: 120 },
+  { id: 'p5', nome: 'Biscoito Polvilho', tipo: TipoProduto.BISCOITO_POLVILHO, tamanhoPacote: TamanhoPacote.CINCO_KG, precoPadrao: 80.00, estoqueMinimo: 10, estoqueAtual: 40 },
+  { id: 'p6', nome: 'Biscoito Goma', tipo: TipoProduto.BISCOITO_GOMA, tamanhoPacote: TamanhoPacote.CINCO_KG, precoPadrao: 80.00, estoqueMinimo: 8, estoqueAtual: 30 },
+  { id: 'p7', nome: 'Fubá', tipo: TipoProduto.FUBA, tamanhoPacote: TamanhoPacote.CINCO_KG, precoPadrao: 80.00, estoqueMinimo: 8, estoqueAtual: 25 },
+  { id: 'p8', nome: 'Pão de Queijo', tipo: TipoProduto.PAO_DE_QUEIJO, tamanhoPacote: '25g', precoPadrao: 0.50, estoqueMinimo: 100, estoqueAtual: 500 },
+  { id: 'p9', nome: 'Pão de Queijo', tipo: TipoProduto.PAO_DE_QUEIJO, tamanhoPacote: '30g', precoPadrao: 0.60, estoqueMinimo: 100, estoqueAtual: 400 },
+  { id: 'p10', nome: 'Pão de Queijo', tipo: TipoProduto.PAO_DE_QUEIJO, tamanhoPacote: '40g', precoPadrao: 0.80, estoqueMinimo: 80, estoqueAtual: 300 },
+  { id: 'p11', nome: 'Pão de Queijo', tipo: TipoProduto.PAO_DE_QUEIJO, tamanhoPacote: '100g', precoPadrao: 2.00, estoqueMinimo: 50, estoqueAtual: 200 },
+  { id: 'p12', nome: 'Rapadura', tipo: TipoProduto.RAPADURA, tamanhoPacote: TamanhoPacote.UM_KG, precoPadrao: 14.00, estoqueMinimo: 15, estoqueAtual: 60 },
 ];
 
 export const MOCK_CLIENTES: Cliente[] = [
-  { id: 'c1', nome: 'Padaria Pão Quente', tipo: TipoCliente.PADARIA, endereco: 'Rua das Flores, 123', telefone: '(11) 98765-4321', condicaoPagamento: CondicaoPagamento.PROXIMA_ENTREGA },
-  { id: 'c2', nome: 'Mercado Central', tipo: TipoCliente.MERCADO, endereco: 'Av. Principal, 456', telefone: '(21) 91234-5678', condicaoPagamento: CondicaoPagamento.A_VISTA },
-  { id: 'c3', nome: 'Cafeteria Aconchego', tipo: TipoCliente.VAREJO, endereco: 'Travessa dos Sabores, 789', telefone: '(31) 95555-1234', condicaoPagamento: CondicaoPagamento.PROXIMA_ENTREGA },
+  { id: 'c1', nome: 'MADÁ', tipo: TipoCliente.PADARIA, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c2', nome: 'LUCAS', tipo: TipoCliente.PADARIA, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c3', nome: 'D.LUCIA', tipo: TipoCliente.PADARIA, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c4', nome: 'FLAM SER', tipo: TipoCliente.PADARIA, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c5', nome: 'FLAM BEL', tipo: TipoCliente.PADARIA, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c6', nome: 'FLAM MAT', tipo: TipoCliente.PADARIA, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c7', nome: 'SUP BAHIA', tipo: TipoCliente.MERCADO, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c8', nome: 'CAFE MIX', tipo: TipoCliente.RESTAURANTE, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c9', nome: 'IDEAL', tipo: TipoCliente.PADARIA, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c10', nome: 'RENER', tipo: TipoCliente.PADARIA, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c11', nome: 'SANDUBS', tipo: TipoCliente.RESTAURANTE, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c12', nome: 'TRADIÇÃO', tipo: TipoCliente.PADARIA, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c13', nome: 'VOU LÁ', tipo: TipoCliente.PADARIA, endereco: 'A definir', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.SETE_DIAS },
+  { id: 'c14', nome: 'AVULSOS', tipo: TipoCliente.OUTROS, endereco: 'Vendas avulsas', telefone: '(00) 00000-0000', condicaoPagamento: CondicaoPagamento.A_VISTA },
 ];
 
 export const MOCK_ENTREGADORES: Entregador[] = [
