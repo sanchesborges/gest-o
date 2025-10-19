@@ -151,66 +151,66 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
                     {/* Items Section */}
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-xl border border-green-100">
-                        <div className="flex items-center justify-between mb-4">
-                            <label className="block text-sm font-bold text-gray-700 flex items-center">
-                                <span className="bg-[#5B6B9E] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">2</span>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
+                            <label className="block text-xs sm:text-sm font-bold text-gray-700 flex items-center">
+                                <span className="bg-[#5B6B9E] text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs mr-2">2</span>
                                 Itens do Pedido
                             </label>
                             <button 
                                 type="button" 
                                 onClick={handleAddItem} 
                                 disabled={produtos.length === itens.length} 
-                                className="flex items-center bg-[#A8D96E] text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-[#98C95E] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-md"
+                                className="flex items-center bg-[#A8D96E] text-gray-800 font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-[#98C95E] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-md text-sm w-full sm:w-auto justify-center"
                             >
-                                <Plus className="mr-1" size={20} /> Adicionar Produto
+                                <Plus className="mr-1" size={18} /> Adicionar Produto
                             </button>
                         </div>
                         
                         {itens.length === 0 ? (
-                            <div className="text-center py-8 text-gray-400">
-                                <ShoppingCart size={48} className="mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">Nenhum item adicionado ainda</p>
-                                <p className="text-xs">Clique em "Adicionar Produto" para começar</p>
+                            <div className="text-center py-6 sm:py-8 text-gray-400">
+                                <ShoppingCart size={40} className="mx-auto mb-2 opacity-30" />
+                                <p className="text-xs sm:text-sm">Nenhum item adicionado ainda</p>
+                                <p className="text-xs hidden sm:block">Clique em "Adicionar Produto" para começar</p>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {itens.map((item, index) => {
                                     const produto = produtos.find(p => p.id === item.produtoId);
                                     return (
-                                        <div key={index} className="bg-white p-4 rounded-xl border-2 border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                        <div key={index} className="bg-white p-3 sm:p-4 rounded-xl border-2 border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                                             {/* Mobile Layout */}
-                                            <div className="flex flex-col gap-3">
+                                            <div className="flex flex-col gap-2 sm:gap-3">
                                                 {/* Produto */}
                                                 <div>
                                                     <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Produto</label>
                                                     <select 
                                                         value={item.produtoId} 
                                                         onChange={e => handleItemChange(index, 'produtoId', e.target.value)} 
-                                                        className="w-full p-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#5B6B9E] focus:border-transparent"
+                                                        className="w-full p-2 sm:p-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#5B6B9E] focus:border-transparent text-sm sm:text-base"
                                                     >
                                                         {availableProducts(item.produtoId).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
                                                     </select>
                                                 </div>
                                                 
                                                 {/* Quantidade e Preço */}
-                                                <div className="grid grid-cols-2 gap-3">
+                                                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                                                     <div>
                                                         <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Quantidade</label>
                                                         <div className="flex items-center border-2 border-gray-300 rounded-lg overflow-hidden bg-white">
                                                             <button 
                                                                 type="button" 
                                                                 onClick={() => handleQuantityChange(index, -1)} 
-                                                                className="p-3 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                                                                className="p-2 sm:p-3 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
                                                             >
-                                                                <Minus size={20}/>
+                                                                <Minus size={16}/>
                                                             </button>
-                                                            <span className="flex-1 text-center font-bold text-xl text-gray-900">{item.quantidade}</span>
+                                                            <span className="flex-1 text-center font-bold text-lg sm:text-xl text-gray-900">{item.quantidade}</span>
                                                             <button 
                                                                 type="button" 
                                                                 onClick={() => handleQuantityChange(index, 1)} 
-                                                                className="p-3 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                                                                className="p-2 sm:p-3 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
                                                             >
-                                                                <Plus size={20}/>
+                                                                <Plus size={16}/>
                                                             </button>
                                                         </div>
                                                     </div>
@@ -218,7 +218,7 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                                     <div>
                                                         <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Preço Unit.</label>
                                                         <div className="relative">
-                                                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 font-bold">R$</span>
+                                                            <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-500 font-bold text-xs sm:text-sm">R$</span>
                                                             <input 
                                                                 type="text"
                                                                 inputMode="decimal"
@@ -227,7 +227,7 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                                                 onBlur={() => handlePrecoBlur(index)}
                                                                 onFocus={e => e.target.select()}
                                                                 placeholder="0.00"
-                                                                className="w-full p-3 pl-10 border-2 border-gray-300 rounded-lg bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#5B6B9E] focus:border-transparent" 
+                                                                className="w-full p-2 sm:p-3 pl-8 sm:pl-10 border-2 border-gray-300 rounded-lg bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#5B6B9E] focus:border-transparent text-sm sm:text-base" 
                                                             />
                                                         </div>
                                                     </div>
@@ -237,14 +237,14 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                                 <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                                                     <div>
                                                         <span className="text-xs font-semibold text-gray-500 uppercase">Subtotal</span>
-                                                        <p className="text-2xl font-bold text-[#5B6B9E]">R$ {(item.quantidade * item.precoUnitario).toFixed(2)}</p>
+                                                        <p className="text-xl sm:text-2xl font-bold text-[#5B6B9E]">R$ {(item.quantidade * item.precoUnitario).toFixed(2)}</p>
                                                     </div>
                                                     <button 
                                                         type="button" 
                                                         onClick={() => handleRemoveItem(index)} 
-                                                        className="bg-red-100 text-red-600 hover:bg-red-200 p-3 rounded-lg transition-colors"
+                                                        className="bg-red-100 text-red-600 hover:bg-red-200 p-2 sm:p-3 rounded-lg transition-colors"
                                                     >
-                                                        <Trash2 size={20} />
+                                                        <Trash2 size={18} />
                                                     </button>
                                                 </div>
                                             </div>
