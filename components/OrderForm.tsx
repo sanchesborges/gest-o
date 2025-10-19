@@ -257,29 +257,30 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="flex-shrink-0 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl border-t-2 border-gray-200">
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex-shrink-0 p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl border-t-2 border-gray-200">
+                    {/* Total do Pedido - Sempre visível no topo */}
+                    <div className="text-center bg-white p-3 sm:p-4 rounded-lg border-2 border-[#5B6B9E] shadow-md mb-3 sm:mb-4">
+                        <span className="text-xs font-bold text-gray-600 uppercase block">Total do Pedido</span>
+                        <p className="text-2xl sm:text-3xl font-bold text-[#5B6B9E]">R$ {calculateTotal().toFixed(2)}</p>
+                    </div>
+                    
+                    {/* Botões lado a lado */}
+                    <div className="flex flex-row items-center gap-2 sm:gap-3">
                         <button 
                             type="button" 
                             onClick={onClose} 
-                            className="bg-white border-2 border-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto order-2 sm:order-1"
+                            className="bg-white border-2 border-gray-300 text-gray-700 font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-gray-50 transition-colors flex-1 text-sm sm:text-base"
                         >
                             Cancelar
                         </button>
-                        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto order-1 sm:order-2">
-                            <div className="text-center sm:text-right bg-white p-4 rounded-lg border-2 border-[#5B6B9E] shadow-md">
-                                <span className="text-xs font-bold text-gray-600 uppercase block">Total do Pedido</span>
-                                <p className="text-3xl font-bold text-[#5B6B9E]">R$ {calculateTotal().toFixed(2)}</p>
-                            </div>
-                            <button 
-                                type="submit" 
-                                onClick={handleSubmit} 
-                                disabled={itens.length === 0}
-                                className="bg-gradient-to-r from-[#5B6B9E] to-[#4A5A8D] text-white font-bold py-4 px-8 rounded-lg hover:from-[#4A5A8D] hover:to-[#3A4A7D] disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg w-full sm:w-auto"
-                            >
-                                Salvar Pedido
-                            </button>
-                        </div>
+                        <button 
+                            type="submit" 
+                            onClick={handleSubmit} 
+                            disabled={itens.length === 0}
+                            className="bg-gradient-to-r from-[#5B6B9E] to-[#4A5A8D] text-white font-bold py-2 sm:py-4 px-4 sm:px-8 rounded-lg hover:from-[#4A5A8D] hover:to-[#3A4A7D] disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg flex-1 text-sm sm:text-base"
+                        >
+                            Salvar Pedido
+                        </button>
                     </div>
                 </div>
             </div>

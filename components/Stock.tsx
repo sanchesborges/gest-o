@@ -200,21 +200,22 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
                 {/* Footer */}
                 <div className="flex-shrink-0 p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl border-t-2 border-gray-200">
-                    <div className="flex flex-col sm:flex-row justify-end items-center gap-2 sm:gap-3">
+                    <div className="flex flex-row justify-end items-center gap-2 sm:gap-3">
                         <button 
                             type="button" 
                             onClick={onClose} 
-                            className="bg-white border-2 border-gray-300 text-gray-700 font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto text-sm sm:text-base"
+                            className="bg-white border-2 border-gray-300 text-gray-700 font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-gray-50 transition-colors flex-1 sm:flex-initial text-sm sm:text-base"
                         >
                             Cancelar
                         </button>
                         <button 
                             type="submit" 
                             onClick={handleSubmit}
-                            className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-2 sm:py-3 px-6 sm:px-8 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg w-full sm:w-auto flex items-center justify-center text-sm sm:text-base"
+                            className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-2 sm:py-3 px-4 sm:px-8 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg flex-1 sm:flex-initial flex items-center justify-center text-sm sm:text-base"
                         >
-                            <PlusCircle className="mr-2" size={18} />
-                            Registrar Entrada
+                            <PlusCircle className="mr-1 sm:mr-2" size={18} />
+                            <span className="hidden sm:inline">Registrar Entrada</span>
+                            <span className="sm:hidden">Registrar</span>
                         </button>
                     </div>
                 </div>
