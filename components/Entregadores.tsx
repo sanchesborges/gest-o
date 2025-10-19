@@ -76,9 +76,7 @@ export const Entregadores: React.FC = () => {
     };
     
     const handleShare = async (entregadorId: string, entregadorNome: string) => {
-        const url = new URL(window.location.href);
-        url.hash = `#/entregador/${entregadorId}`;
-        const link = url.href;
+        const link = `${window.location.origin}/#/entregador/${entregadorId}`;
 
         const shareData = {
             title: `Acesso de Entregador - Maná`,
@@ -104,9 +102,7 @@ export const Entregadores: React.FC = () => {
     };
 
     const handleShareWhatsApp = (entregador: { id: string; nome: string; telefone?: string }) => {
-        const url = new URL(window.location.href);
-        url.hash = `#/entregador/${entregador.id}`;
-        const link = url.href;
+        const link = `${window.location.origin}/#/entregador/${entregador.id}`;
 
         const pendingDeliveries = pedidos.filter(p => 
             p.entregadorId === entregador.id && p.status === StatusPedido.PENDENTE
