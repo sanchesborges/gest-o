@@ -113,8 +113,8 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         produtos.filter(p => !itens.some(i => i.produtoId === p.id) || p.id === currentItemId);
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[60] p-4" onClick={onClose}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[calc(100vh-120px)] max-h-[85vh] flex flex-col mb-20" onClick={e => e.stopPropagation()}>
                 {/* Header */}
                 <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-gradient-to-r from-[#5B6B9E] to-[#4A5A8D] rounded-t-2xl relative flex-shrink-0">
                     <div className="flex items-center">
