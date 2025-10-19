@@ -40,12 +40,36 @@ const saveToStorage = <T,>(key: string, value: T): void => {
   }
 };
 
+// Convert date strings back to Date objects
+const parsePedidos = (pedidos: any[]): Pedido[] => {
+  return pedidos.map(p => ({
+    ...p,
+    data: new Date(p.data),
+    dataVencimentoPagamento: new Date(p.dataVencimentoPagamento)
+  }));
+};
+
+const parseEntradasEstoque = (entradas: any[]): EntradaEstoque[] => {
+  return entradas.map(e => ({
+    ...e,
+    dataRecebimento: new Date(e.dataRecebimento),
+    dataValidade: e.dataValidade ? new Date(e.dataValidade) : undefined
+  }));
+};
+
+const parsePagamentos = (pagamentos: any[]): Pagamento[] => {
+  return pagamentos.map(p => ({
+    ...p,
+    data: new Date(p.data)
+  }));
+};
+
 export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [produtos, setProdutos] = useState<Produto[]>(() => loadFromStorage('produtos', MOCK_PRODUTOS));
   const [clientes, setClientes] = useState<Cliente[]>(() => loadFromStorage('clientes', MOCK_CLIENTES));
-  const [pedidos, setPedidos] = useState<Pedido[]>(() => loadFromStorage('pedidos', MOCK_PEDIDOS));
-  const [entradasEstoque, setEntradasEstoque] = useState<EntradaEstoque[]>(() => loadFromStorage('entradasEstoque', MOCK_ENTRADAS_ESTOQUE));
-  const [pagamentos, setPagamentos] = useState<Pagamento[]>(() => loadFromStorage('pagamentos', MOCK_PAGAMENTOS));
+  const [pedidos, setPedidos] = useState<Pedido[]>(() => parsePedidos(loadFromStorage('pedidos', MOCK_PEDIDOS)));
+  const [entradasEstoque, setEntradasEstoque] = useState<EntradaEstoque[]>(() => parseEntradasEstoque(loadFromStorage('entradasEstoque', MOCK_ENTRADAS_ESTOQUE)));
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>(() => parsePagamentos(loadFromStorage('pagamentos', MOCK_PAGAMENTOS)));
   const [entregadores, setEntregadores] = useState<Entregador[]>(() => loadFromStorage('entregadores', MOCK_ENTREGADORES));
 
   // Persist data to localStorage whenever it changes
