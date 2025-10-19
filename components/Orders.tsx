@@ -48,7 +48,8 @@ const AssignDriverModal: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ 
         }).join('%0A');
 
         // 3. Generate the delivery portal link with the driver's ID
-        const deliveryPortalLink = `https://gestao-sepia.vercel.app/#/entregador/${selectedEntregadorId}`;
+        const currentOrigin = window.location.origin;
+        const deliveryPortalLink = `${currentOrigin}/#/entregador/${selectedEntregadorId}`;
 
         const message = `*NOVA ENTREGA ATRIBUÍDA - MANÁ*%0A%0A` +
             `Olá, *${entregadorSelecionado?.nome.split(' ')[0]}*! Você tem uma nova entrega.%0A%0A` +
