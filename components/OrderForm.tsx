@@ -116,23 +116,23 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b bg-gradient-to-r from-[#5B6B9E] to-[#4A5A8D] rounded-t-2xl relative">
+                <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-gradient-to-r from-[#5B6B9E] to-[#4A5A8D] rounded-t-2xl relative flex-shrink-0">
                     <div className="flex items-center">
-                        <div className="bg-white bg-opacity-20 p-3 rounded-xl mr-3">
-                            <ShoppingCart className="text-white" size={28}/>
+                        <div className="bg-white bg-opacity-20 p-2 sm:p-3 rounded-xl mr-2 sm:mr-3">
+                            <ShoppingCart className="text-white" size={24}/>
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-white">Novo Pedido</h2>
-                            <p className="text-white text-opacity-80 text-sm">Adicione produtos ao carrinho</p>
+                            <h2 className="text-xl sm:text-2xl font-bold text-white">Novo Pedido</h2>
+                            <p className="text-white text-opacity-80 text-xs sm:text-sm">Adicione produtos ao carrinho</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 text-white text-opacity-80 rounded-full hover:bg-white hover:bg-opacity-20 hover:text-white absolute top-4 right-4 transition-colors">
-                        <X size={24} />
+                    <button onClick={onClose} className="p-2 text-white text-opacity-80 rounded-full hover:bg-white hover:bg-opacity-20 hover:text-white absolute top-3 sm:top-4 right-3 sm:right-4 transition-colors">
+                        <X size={20} />
                     </button>
                 </div>
                 
-                {/* Form Content */}
-                <div className="flex-grow overflow-y-auto p-6 space-y-6">
+                {/* Form Content - Com scroll */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 min-h-0">
                     {/* Cliente Selection */}
                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
                         <label htmlFor="cliente" className="block text-sm font-bold text-gray-700 mb-2 flex items-center">
@@ -256,12 +256,12 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="flex-shrink-0 p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl border-t-2 border-gray-200">
+                {/* Footer - Sempre visível */}
+                <div className="flex-shrink-0 p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl border-t-2 border-gray-200">
                     {/* Total do Pedido - Sempre visível no topo */}
-                    <div className="text-center bg-white p-3 sm:p-4 rounded-lg border-2 border-[#5B6B9E] shadow-md mb-3 sm:mb-4">
+                    <div className="text-center bg-white p-2 sm:p-3 rounded-lg border-2 border-[#5B6B9E] shadow-md mb-2 sm:mb-3">
                         <span className="text-xs font-bold text-gray-600 uppercase block">Total do Pedido</span>
-                        <p className="text-2xl sm:text-3xl font-bold text-[#5B6B9E]">R$ {calculateTotal().toFixed(2)}</p>
+                        <p className="text-xl sm:text-2xl font-bold text-[#5B6B9E]">R$ {calculateTotal().toFixed(2)}</p>
                     </div>
                     
                     {/* Botões lado a lado */}
@@ -269,7 +269,7 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         <button 
                             type="button" 
                             onClick={onClose} 
-                            className="bg-white border-2 border-gray-300 text-gray-700 font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-gray-50 transition-colors flex-1 text-sm sm:text-base"
+                            className="bg-white border-2 border-gray-300 text-gray-700 font-bold py-2 sm:py-3 px-3 sm:px-6 rounded-lg hover:bg-gray-50 transition-colors flex-1 text-sm sm:text-base"
                         >
                             Cancelar
                         </button>
@@ -277,7 +277,7 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             type="submit" 
                             onClick={handleSubmit} 
                             disabled={itens.length === 0}
-                            className="bg-gradient-to-r from-[#5B6B9E] to-[#4A5A8D] text-white font-bold py-2 sm:py-4 px-4 sm:px-8 rounded-lg hover:from-[#4A5A8D] hover:to-[#3A4A7D] disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg flex-1 text-sm sm:text-base"
+                            className="bg-gradient-to-r from-[#5B6B9E] to-[#4A5A8D] text-white font-bold py-2 sm:py-3 px-3 sm:px-8 rounded-lg hover:from-[#4A5A8D] hover:to-[#3A4A7D] disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg flex-1 text-sm sm:text-base"
                         >
                             Salvar Pedido
                         </button>
