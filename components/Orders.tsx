@@ -222,23 +222,9 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
 
     const isEntregadorView = userRole === UserRole.ENTREGADOR;
 
-    // Debug: Log para verificar o filtro
-    console.log('Orders Component Debug:', {
-        userRole,
-        entregadorId,
-        isEntregadorView,
-        totalPedidos: pedidos.length,
-        pedidosComEntregador: pedidos.filter(p => p.entregadorId).length
-    });
-
     const initialPedidos = isEntregadorView && entregadorId
-        ? pedidos.filter(p => {
-            console.log(`Comparando pedido ${p.id}: entregadorId=${p.entregadorId} com ${entregadorId}`);
-            return p.entregadorId === entregadorId;
-        })
+        ? pedidos.filter(p => p.entregadorId === entregadorId)
         : pedidos;
-
-    console.log('Pedidos filtrados:', initialPedidos.length);
 
     const handleOpenNote = (pedido: Pedido) => {
         setSelectedOrder(pedido);
