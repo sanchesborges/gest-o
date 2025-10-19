@@ -52,8 +52,7 @@ const BottomNavBar: React.FC<{ userRole: UserRole; onHomeClick?: () => void }> =
 
     // Use relative paths for Entregador portal
     const entregadorNavItems = [
-        { to: ".", icon: <Home size={24} />, label: "Início" },
-        { to: "pedidos", icon: <ShoppingCart size={24} />, label: "Pedidos" },
+        { to: "", icon: <ShoppingCart size={24} />, label: "Pedidos" },
     ];
 
     const accessibleItems = userRole === UserRole.ADMIN ? adminNavItems : entregadorNavItems;
@@ -80,8 +79,8 @@ const EntregadorPortal: React.FC = () => {
         <div className="flex flex-col h-screen bg-brand-light">
             <main className="flex-1 overflow-y-auto p-4 pb-28">
                 <Routes>
-                    <Route path="/" element={<Dashboard userRole={userRole} />} />
-                    <Route path="/pedidos" element={<Orders userRole={userRole} />} />
+                    <Route index element={<Orders userRole={userRole} />} />
+                    <Route path="pedidos" element={<Orders userRole={userRole} />} />
                     <Route path="*" element={<Navigate to="." replace />} />
                 </Routes>
             </main>

@@ -163,7 +163,7 @@ const AdminDashboard: React.FC = () => {
         value: productSales[name]
     }));
 
-    const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
+    const COLORS = ['#5B6B9E', '#A8D96E', '#f59e0b', '#ef4444', '#3b82f6'];
 
     const handleGenerateSummary = async () => {
         setIsLoadingSummary(true);
@@ -193,7 +193,7 @@ const AdminDashboard: React.FC = () => {
                             <YAxis />
                             <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
                             <Legend />
-                            <Bar dataKey="Vendas" fill="#4f46e5" />
+                            <Bar dataKey="Vendas" fill="#5B6B9E" />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>

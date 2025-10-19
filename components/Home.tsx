@@ -134,7 +134,7 @@ export const Home: React.FC = () => {
                     <div>
                         <h1 className="text-3xl font-bold text-gray-800 flex items-center">
                             <Package className="mr-2 text-indigo-600" size={32} />
-                            Shirley
+                            Maná
                         </h1>
                         <p className="text-gray-500 text-sm mt-1">Gerencie seu negócio facilmente</p>
                     </div>

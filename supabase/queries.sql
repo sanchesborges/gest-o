@@ -1,5 +1,5 @@
 -- =====================================================
--- SHIRLEY - Queries Úteis
+-- MANÁ - Queries Úteis
 -- Consultas SQL comuns para análise e relatórios
 -- =====================================================
 

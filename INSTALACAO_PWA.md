@@ -1,6 +1,6 @@
-# 📱 Como Instalar o Shirley como Aplicativo
+# 📱 Como Instalar o Maná como Aplicativo
 
-O **Shirley** é um PWA (Progressive Web App), o que significa que você pode instalá-lo no seu celular ou computador como se fosse um aplicativo nativo!
+O **Maná** é um PWA (Progressive Web App), o que significa que você pode instalá-lo no seu celular ou computador como se fosse um aplicativo nativo!
 
 ## 📲 Instalação no Android (Chrome)
 
@@ -8,7 +8,7 @@ O **Shirley** é um PWA (Progressive Web App), o que significa que você pode in
 2. Toque no menu (⋮) no canto superior direito
 3. Selecione **"Adicionar à tela inicial"** ou **"Instalar aplicativo"**
 4. Confirme tocando em **"Adicionar"** ou **"Instalar"**
-5. O ícone do Shirley aparecerá na sua tela inicial! 🎉
+5. O ícone do Maná aparecerá na sua tela inicial! 🎉
 
 ## 🍎 Instalação no iPhone/iPad (Safari)
 
@@ -16,13 +16,13 @@ O **Shirley** é um PWA (Progressive Web App), o que significa que você pode in
 2. Toque no botão de **Compartilhar** (□↑) na parte inferior
 3. Role para baixo e toque em **"Adicionar à Tela de Início"**
 4. Edite o nome se desejar e toque em **"Adicionar"**
-5. O ícone do Shirley aparecerá na sua tela inicial! 🎉
+5. O ícone do Maná aparecerá na sua tela inicial! 🎉
 
 ## 💻 Instalação no Computador (Chrome/Edge)
 
 1. Abra o site no **Google Chrome** ou **Microsoft Edge**
 2. Clique no ícone de **instalação** (⊕) na barra de endereço
-   - Ou vá em Menu → "Instalar Shirley..."
+   - Ou vá em Menu → "Instalar Maná..."
 3. Clique em **"Instalar"**
 4. O aplicativo será instalado e abrirá em uma janela própria! 🎉
 
@@ -37,7 +37,7 @@ O **Shirley** é um PWA (Progressive Web App), o que significa que você pode in
 
 ## 🎨 Ícone do App
 
-O ícone do Shirley é um **biscoito dourado** com a letra **S** em branco, representando os deliciosos produtos que você gerencia! 🍪
+O ícone do Maná representa os deliciosos produtos congelados que você gerencia! 🍪
 
 ---
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shirley-gest-v8';
+const CACHE_NAME = 'mana-gest-v1';
 
 // Lista de arquivos que NÃO devem ser cacheados
 const EXCLUDE_FROM_CACHE = [

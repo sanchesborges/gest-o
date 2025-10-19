@@ -1,6 +1,6 @@
 # 🗄️ Configuração do Banco de Dados Supabase
 
-Este diretório contém os arquivos SQL necessários para configurar o banco de dados do **Shirley** no Supabase.
+Este diretório contém os arquivos SQL necessários para configurar o banco de dados do **Maná** no Supabase.
 
 ## 📁 Arquivos
 
@@ -15,7 +15,7 @@ Este diretório contém os arquivos SQL necessários para configurar o banco de 
 2. Crie uma conta ou faça login
 3. Clique em **"New Project"**
 4. Preencha:
-   - **Name**: Shirley
+   - **Name**: Maná
    - **Database Password**: (escolha uma senha forte)
    - **Region**: Escolha a mais próxima de você
 5. Clique em **"Create new project"**

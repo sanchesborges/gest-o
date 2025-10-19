@@ -88,13 +88,35 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
     setIsGeneratingImage(true);
     
     try {
-      // Usar html2canvas para capturar a nota
+      // Salvar o estado original do scroll
+      const originalOverflow = noteRef.current.style.overflow;
+      const originalHeight = noteRef.current.style.height;
+      const originalMaxHeight = noteRef.current.style.maxHeight;
+      
+      // Remover overflow e altura máxima temporariamente para capturar tudo
+      noteRef.current.style.overflow = 'visible';
+      noteRef.current.style.height = 'auto';
+      noteRef.current.style.maxHeight = 'none';
+      
+      // Aguardar um momento para o DOM atualizar
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Usar html2canvas para capturar a nota completa
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(noteRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
         logging: false,
+        windowWidth: noteRef.current.scrollWidth,
+        windowHeight: noteRef.current.scrollHeight,
+        width: noteRef.current.scrollWidth,
+        height: noteRef.current.scrollHeight,
       });
+      
+      // Restaurar o estado original
+      noteRef.current.style.overflow = originalOverflow;
+      noteRef.current.style.height = originalHeight;
+      noteRef.current.style.maxHeight = originalMaxHeight;
       
       const imageData = canvas.toDataURL('image/png');
       setIsGeneratingImage(false);
@@ -145,7 +167,7 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
       return `${produto?.nome || 'N/A'} - ${item.quantidade}x R$ ${item.precoUnitario.toFixed(2)} = R$ ${(item.quantidade * item.precoUnitario).toFixed(2)}`;
     }).join('%0A');
 
-    const message = `*NOTA DE ENTREGA - SHIRLEY*%0A%0A` +
+    const message = `*NOTA DE ENTREGA - MANÁ*%0A%0A` +
                     `*Pedido:* ${pedido.id.toUpperCase()}%0A` +
                     `*Cliente:* ${cliente?.nome}%0A` +
                     `*Data:* ${pedido.data.toLocaleDateString('pt-BR')}%0A` +
@@ -206,13 +228,14 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
         </div>
 
         {/* Content */}
-        <div ref={noteRef} className="flex-grow overflow-y-auto p-6 space-y-6 bg-white">
-            {/* Cabeçalho da Nota */}
-            <div className="text-center border-b-2 border-indigo-600 pb-4 mb-4">
-                <h1 className="text-3xl font-bold text-indigo-600">SHIRLEY</h1>
-                <p className="text-sm text-gray-600">Produtos de Qualidade</p>
-                <p className="text-xs text-gray-500 mt-1">NOTA DE ENTREGA</p>
-            </div>
+        <div className="flex-grow overflow-y-auto bg-gray-100 p-4">
+            <div ref={noteRef} className="space-y-6 bg-white p-6 rounded-lg shadow-lg">
+                {/* Cabeçalho da Nota */}
+                <div className="text-center border-b-2 border-indigo-600 pb-4 mb-4">
+                    <h1 className="text-3xl font-bold text-indigo-600">MANÁ</h1>
+                    <p className="text-sm text-gray-600">Produtos Congelados</p>
+                    <p className="text-xs text-gray-500 mt-1">NOTA DE ENTREGA</p>
+                </div>
 
             <div className="p-4 border-2 border-gray-300 rounded-lg bg-gray-50 space-y-2">
                 <div className="grid grid-cols-2 gap-3">
@@ -306,6 +329,7 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
                         </div>
                     </>
                 )}
+            </div>
             </div>
         </div>
         

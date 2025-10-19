@@ -1,5 +1,5 @@
 -- =====================================================
--- SHIRLEY - Schema SQL para Supabase
+-- MANÁ - Schema SQL para Supabase
 -- Sistema de Gestão de Produtos e Entregas
 -- =====================================================
 

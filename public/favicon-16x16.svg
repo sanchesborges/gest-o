@@ -1,0 +1,6 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="8" cy="8" r="8" fill="#5B6B9E"/>
+  <circle cx="8" cy="8" r="7" fill="#4A5A8D"/>
+  <circle cx="8" cy="8" r="7.5" stroke="#A8D96E" stroke-width="0.8" fill="none"/>
+  <text x="8" y="11" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#A8D96E" text-anchor="middle">M</text>
+</svg>

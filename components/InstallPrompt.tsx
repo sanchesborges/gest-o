@@ -68,7 +68,7 @@ export const InstallPrompt: React.FC = () => {
             <Download size={24} />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-lg mb-1">Instalar Shirley</h3>
+            <h3 className="font-bold text-lg mb-1">Instalar Maná</h3>
             <p className="text-sm text-indigo-100 mb-3">
               Instale o app para acesso rápido e funcione offline!
             </p>

@@ -81,7 +81,7 @@ export const Entregadores: React.FC = () => {
         const link = url.href;
 
         const shareData = {
-            title: `Acesso de Entregador - Shirley`,
+            title: `Acesso de Entregador - Maná`,
             text: `Olá, ${entregadorNome.split(' ')[0]}! Acesse seu portal de entregas aqui:`,
             url: link,
         };
@@ -112,7 +112,7 @@ export const Entregadores: React.FC = () => {
             p.entregadorId === entregador.id && p.status === StatusPedido.PENDENTE
         );
 
-        const message = `*SHIRLEY - Portal do Entregador*%0A%0A` +
+        const message = `*MANÁ - Portal do Entregador*%0A%0A` +
                         `Olá, *${entregador.nome.split(' ')[0]}*!%0A%0A` +
                         `Você tem *${pendingDeliveries.length} ${pendingDeliveries.length === 1 ? 'entrega pendente' : 'entregas pendentes'}* para hoje.%0A%0A` +
                         `Acesse seu portal de entregas clicando no link abaixo:%0A` +

@@ -1,5 +1,5 @@
 -- =====================================================
--- SHIRLEY - Dados Iniciais (SEED)
+-- MANÁ - Dados Iniciais (SEED)
 -- Popula o banco com dados de exemplo
 -- =====================================================
 

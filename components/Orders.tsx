@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
 import { PlusCircle, ShoppingCart, Printer, Filter, Bike, X } from 'lucide-react';
 import { Pedido, StatusPedido, StatusPagamento, UserRole } from '../types';
@@ -47,21 +47,31 @@ const AssignDriverModal: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ 
             return `- ${item.quantidade}x ${produto?.nome || 'N/A'}`;
         }).join('%0A');
 
-        const message = `*NOVA ENTREGA ATRIBUÍDA*%0A%0A` +
-                        `Olá, ${entregadorSelecionado?.nome.split(' ')[0]}! Você tem uma nova entrega.%0A%0A` +
+        // 3. Generate the delivery portal link for this driver
+        const currentUrl = window.location.origin;
+        const currentPath = window.location.pathname;
+        const deliveryPortalLink = `${currentUrl}${currentPath}#/entregador/${selectedEntregadorId}`;
+
+        const message = `*NOVA ENTREGA ATRIBUÍDA - MANÁ*%0A%0A` +
+                        `Olá, *${entregadorSelecionado?.nome.split(' ')[0]}*! Você tem uma nova entrega.%0A%0A` +
+                        `📦 *DETALHES DA ENTREGA*%0A` +
+                        `━━━━━━━━━━━━━━━━━━━━%0A` +
                         `*Cliente:* ${cliente?.nome}%0A` +
                         `*Endereço:* ${cliente?.endereco}%0A` +
                         `*Telefone Cliente:* ${cliente?.telefone}%0A%0A` +
-                        `*Itens:*%0A${itemsText}%0A%0A` +
-                        `*Valor Total a Receber:* R$ ${pedido.valorTotal.toFixed(2)}%0A`+
-                        `*Condição de Pagamento:* ${cliente?.condicaoPagamento}%0A%0A` +
-                        `_Por favor, confirme o recebimento desta mensagem._`;
+                        `*Itens para Entregar:*%0A${itemsText}%0A%0A` +
+                        `💰 *Valor Total a Receber:* R$ ${pedido.valorTotal.toFixed(2)}%0A`+
+                        `💳 *Condição de Pagamento:* ${cliente?.condicaoPagamento}%0A%0A` +
+                        `━━━━━━━━━━━━━━━━━━━━%0A` +
+                        `🔗 *ACESSE SEU PORTAL DE ENTREGAS:*%0A` +
+                        `${deliveryPortalLink}%0A%0A` +
+                        `_Clique no link acima para ver seus pedidos e coletar assinaturas._`;
 
-        // 3. Create the share link (without a phone number) and open WhatsApp
+        // 4. Create the share link (without a phone number) and open WhatsApp
         const whatsappUrl = `https://wa.me/?text=${message}`;
         window.open(whatsappUrl, '_blank');
         
-        // 4. Close the modal
+        // 5. Close the modal
         onClose();
     };
 
@@ -205,9 +215,23 @@ export const Orders: React.FC<{userRole: UserRole}> = ({userRole}) => {
 
   const isEntregadorView = userRole === UserRole.ENTREGADOR;
   
+  // Debug: Log para verificar o filtro
+  console.log('Orders Component Debug:', {
+    userRole,
+    entregadorId,
+    isEntregadorView,
+    totalPedidos: pedidos.length,
+    pedidosComEntregador: pedidos.filter(p => p.entregadorId).length
+  });
+  
   const initialPedidos = isEntregadorView && entregadorId
-    ? pedidos.filter(p => p.entregadorId === entregadorId)
+    ? pedidos.filter(p => {
+        console.log(`Comparando pedido ${p.id}: entregadorId=${p.entregadorId} com ${entregadorId}`);
+        return p.entregadorId === entregadorId;
+      })
     : pedidos;
+  
+  console.log('Pedidos filtrados:', initialPedidos.length);
 
   const handleOpenNote = (pedido: Pedido) => {
       setSelectedOrder(pedido);
