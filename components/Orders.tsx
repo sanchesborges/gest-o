@@ -49,7 +49,7 @@ const AssignDriverModal: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ 
 
         // 3. Generate the delivery portal link for this driver
         const currentUrl = window.location.origin;
-        const deliveryPortalLink = `${currentUrl}/#/entregador/${selectedEntregadorId}`;
+        const deliveryPortalLink = `${currentUrl}/#/entregador-view/${selectedEntregadorId}`;
         
         console.log('DEBUG - Link gerado:', deliveryPortalLink);
         console.log('DEBUG - ID do entregador:', selectedEntregadorId);
