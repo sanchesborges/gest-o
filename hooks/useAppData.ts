@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Produto, Cliente, Pedido, EntradaEstoque, Pagamento, ItemPedido, StatusPedido, StatusPagamento, MetodoPagamento, Entregador } from '../types';
 import { MOCK_PRODUTOS, MOCK_CLIENTES, MOCK_PEDIDOS, MOCK_ENTRADAS_ESTOQUE, MOCK_PAGAMENTOS, MOCK_ENTREGADORES } from '../constants';
 
@@ -21,13 +21,57 @@ interface AppDataContextType {
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
+// Helper functions for localStorage
+const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.error(`Error loading ${key} from localStorage:`, error);
+    return defaultValue;
+  }
+};
+
+const saveToStorage = <T,>(key: string, value: T): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Error saving ${key} to localStorage:`, error);
+  }
+};
+
 export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [produtos, setProdutos] = useState<Produto[]>(MOCK_PRODUTOS);
-  const [clientes, setClientes] = useState<Cliente[]>(MOCK_CLIENTES);
-  const [pedidos, setPedidos] = useState<Pedido[]>(MOCK_PEDIDOS);
-  const [entradasEstoque, setEntradasEstoque] = useState<EntradaEstoque[]>(MOCK_ENTRADAS_ESTOQUE);
-  const [pagamentos, setPagamentos] = useState<Pagamento[]>(MOCK_PAGAMENTOS);
-  const [entregadores, setEntregadores] = useState<Entregador[]>(MOCK_ENTREGADORES);
+  const [produtos, setProdutos] = useState<Produto[]>(() => loadFromStorage('produtos', MOCK_PRODUTOS));
+  const [clientes, setClientes] = useState<Cliente[]>(() => loadFromStorage('clientes', MOCK_CLIENTES));
+  const [pedidos, setPedidos] = useState<Pedido[]>(() => loadFromStorage('pedidos', MOCK_PEDIDOS));
+  const [entradasEstoque, setEntradasEstoque] = useState<EntradaEstoque[]>(() => loadFromStorage('entradasEstoque', MOCK_ENTRADAS_ESTOQUE));
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>(() => loadFromStorage('pagamentos', MOCK_PAGAMENTOS));
+  const [entregadores, setEntregadores] = useState<Entregador[]>(() => loadFromStorage('entregadores', MOCK_ENTREGADORES));
+
+  // Persist data to localStorage whenever it changes
+  useEffect(() => {
+    saveToStorage('produtos', produtos);
+  }, [produtos]);
+
+  useEffect(() => {
+    saveToStorage('clientes', clientes);
+  }, [clientes]);
+
+  useEffect(() => {
+    saveToStorage('pedidos', pedidos);
+  }, [pedidos]);
+
+  useEffect(() => {
+    saveToStorage('entradasEstoque', entradasEstoque);
+  }, [entradasEstoque]);
+
+  useEffect(() => {
+    saveToStorage('pagamentos', pagamentos);
+  }, [pagamentos]);
+
+  useEffect(() => {
+    saveToStorage('entregadores', entregadores);
+  }, [entregadores]);
 
   const addProduto = (produtoData: Omit<Produto, 'id' | 'estoqueAtual'>) => {
     const newProduto: Produto = {
