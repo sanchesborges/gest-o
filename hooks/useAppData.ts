@@ -89,15 +89,21 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         .from('produtos')
         .select('*');
       if (!produtosError && produtosData) {
-        const mappedProdutos = produtosData.map((p: any) => ({
-          id: p.id,
-          nome: p.nome,
-          tipo: p.tipo || 'Biscoito',
-          tamanhoPacote: p.tamanho_pacote,
-          precoPadrao: parseFloat(p.preco_unitario),
-          estoqueMinimo: p.estoque_minimo || 0,
-          estoqueAtual: p.estoque_atual
-        }));
+        const mappedProdutos = produtosData.map((p: any) => {
+          const preco = parseFloat(p.preco_unitario);
+          console.log(`📦 Produto: ${p.nome}, Preço: ${p.preco_unitario} → ${preco}`);
+          
+          return {
+            id: p.id,
+            nome: p.nome,
+            tipo: p.tipo || 'Biscoito',
+            tamanhoPacote: p.tamanho_pacote,
+            precoPadrao: isNaN(preco) ? 0 : preco,
+            estoqueMinimo: p.estoque_minimo || 0,
+            estoqueAtual: p.estoque_atual
+          };
+        });
+        console.log('✅ Produtos carregados:', mappedProdutos);
         setProdutos(mappedProdutos);
       } else if (produtosError) {
         console.error('Erro ao carregar produtos:', produtosError);
@@ -374,66 +380,58 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const addEntradaEstoque = async (entradaData: Omit<EntradaEstoque, 'id'>) => {
-    const newEntrada: EntradaEstoque = {
-        ...entradaData,
-        id: `e${Date.now()}`
-    };
+    const tempId = `e${Date.now()}`;
+    const newEntrada: EntradaEstoque = { ...entradaData, id: tempId };
     
+    console.log('📦 Salvando entrada de estoque localmente...');
+    
+    // 1. SALVAR LOCALMENTE PRIMEIRO (sempre funciona)
+    setProdutos(prevProdutos => {
+        const newProdutos = [...prevProdutos];
+        const productIndex = newProdutos.findIndex(p => p.id === entradaData.produtoId);
+        if (productIndex !== -1) {
+            newProdutos[productIndex].estoqueAtual += entradaData.quantidade;
+        }
+        return newProdutos;
+    });
+    
+    setEntradasEstoque(prev => [...prev, newEntrada]);
+    saveToStorage('entradasEstoque', [...entradasEstoque, newEntrada]);
+    
+    console.log('✅ Entrada salva localmente!');
+    
+    // 2. TENTAR SINCRONIZAR COM SUPABASE (em background, sem bloquear)
     try {
-      console.log('📦 Salvando entrada de estoque:', {
-        id: newEntrada.id,
-        produto_id: newEntrada.produtoId,
-        quantidade: newEntrada.quantidade,
-        fornecedor: newEntrada.fornecedor
-      });
+      const dataToInsert = {
+        produto_id: entradaData.produtoId,
+        quantidade: entradaData.quantidade,
+        fornecedor: entradaData.fornecedor,
+        data_recebimento: entradaData.dataRecebimento.toISOString(),
+        data_validade: entradaData.dataValidade?.toISOString()
+      };
       
-      // Insert entrada
       const { error } = await supabase
         .from('entradas_estoque')
-        .insert([{
-          id: newEntrada.id,
-          produto_id: newEntrada.produtoId,
-          quantidade: newEntrada.quantidade,
-          fornecedor: newEntrada.fornecedor,
-          data_recebimento: newEntrada.dataRecebimento.toISOString(),
-          data_validade: newEntrada.dataValidade?.toISOString()
-        }]);
+        .insert([dataToInsert]);
       
       if (error) {
-        console.error('❌ Erro ao salvar entrada de estoque no Supabase:', error);
-        console.error('Detalhes:', JSON.stringify(error, null, 2));
-        // Fallback to localStorage
-        saveToStorage('entradasEstoque', [...entradasEstoque, newEntrada]);
+        console.warn('⚠️ Não foi possível sincronizar com Supabase:', error.message);
+        console.log('💾 Dados mantidos apenas localmente');
       } else {
-        console.log('✅ Entrada de estoque salva com sucesso no Supabase!');
+        console.log('✅ Sincronizado com Supabase!');
+        
+        // Atualizar estoque no Supabase também
+        const produto = produtos.find(p => p.id === entradaData.produtoId);
+        if (produto) {
+          await supabase
+            .from('produtos')
+            .update({ estoque_atual: produto.estoqueAtual + entradaData.quantidade })
+            .eq('id', entradaData.produtoId);
+        }
       }
-      
-      // Update stock in Supabase
-      const produto = produtos.find(p => p.id === entradaData.produtoId);
-      if (produto) {
-        const novoEstoque = produto.estoqueAtual + entradaData.quantidade;
-        await supabase
-          .from('produtos')
-          .update({ estoque_atual: novoEstoque })
-          .eq('id', entradaData.produtoId);
-      }
-      
-      // Update local state
-      setProdutos(prevProdutos => {
-          const newProdutos = [...prevProdutos];
-          const productIndex = newProdutos.findIndex(p => p.id === entradaData.produtoId);
-          if (productIndex !== -1) {
-              newProdutos[productIndex].estoqueAtual += entradaData.quantidade;
-          }
-          return newProdutos;
-      });
-
-      setEntradasEstoque(prev => [...prev, newEntrada]);
-      
     } catch (error) {
-      console.error('Erro ao adicionar entrada de estoque:', error);
-      saveToStorage('entradasEstoque', [...entradasEstoque, newEntrada]);
-      setEntradasEstoque(prev => [...prev, newEntrada]);
+      console.warn('⚠️ Erro ao sincronizar com Supabase:', error);
+      console.log('💾 Dados mantidos apenas localmente');
     }
   };
   

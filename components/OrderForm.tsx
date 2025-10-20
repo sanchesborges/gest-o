@@ -12,9 +12,20 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const handleAddItem = () => {
         const defaultProduct = produtos.find(p => !itens.some(i => i.produtoId === p.id));
         if (defaultProduct) {
+            console.log('🛒 Adicionando produto:', defaultProduct);
+            console.log('💰 Preço padrão:', defaultProduct.precoPadrao);
+            
             const newIndex = itens.length;
-            setItens([...itens, { produtoId: defaultProduct.id, quantidade: 1, precoUnitario: defaultProduct.precoPadrao }]);
-            setPrecoInputs({...precoInputs, [newIndex]: defaultProduct.precoPadrao.toFixed(2)});
+            const preco = defaultProduct.precoPadrao || 0;
+            
+            setItens([...itens, { 
+                produtoId: defaultProduct.id, 
+                quantidade: 1, 
+                precoUnitario: preco 
+            }]);
+            setPrecoInputs({...precoInputs, [newIndex]: preco.toFixed(2)});
+            
+            console.log('✅ Item adicionado com preço:', preco);
         } else {
             alert("Todos os produtos já foram adicionados.");
         }
@@ -38,10 +49,15 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     };
 
     const handlePrecoChange = (index: number, value: string) => {
-        setPrecoInputs({...precoInputs, [index]: value});
-        const numValue = parseFloat(value);
+        // Permitir apenas números e ponto decimal
+        const sanitized = value.replace(/[^\d.]/g, '');
+        setPrecoInputs({...precoInputs, [index]: sanitized});
+        const numValue = parseFloat(sanitized);
         if (!isNaN(numValue) && numValue >= 0) {
             handleItemChange(index, 'precoUnitario', numValue);
+        } else if (sanitized === '' || sanitized === '.') {
+            // Se vazio ou apenas ponto, definir como 0
+            handleItemChange(index, 'precoUnitario', 0);
         }
     };
 
@@ -82,7 +98,11 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     };
     
     const calculateTotal = () => {
-        return itens.reduce((total, item) => total + (item.quantidade * item.precoUnitario), 0);
+        return itens.reduce((total, item) => {
+            const quantidade = item.quantidade || 0;
+            const preco = item.precoUnitario || 0;
+            return total + (quantidade * preco);
+        }, 0);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -222,7 +242,7 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                                             <input 
                                                                 type="text"
                                                                 inputMode="decimal"
-                                                                value={precoInputs[index] ?? item.precoUnitario.toFixed(2)} 
+                                                                value={precoInputs[index] !== undefined ? precoInputs[index] : item.precoUnitario.toFixed(2)} 
                                                                 onChange={e => handlePrecoChange(index, e.target.value)}
                                                                 onBlur={() => handlePrecoBlur(index)}
                                                                 onFocus={e => e.target.select()}
@@ -237,7 +257,9 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                                 <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                                                     <div>
                                                         <span className="text-xs font-semibold text-gray-500 uppercase">Subtotal</span>
-                                                        <p className="text-xl sm:text-2xl font-bold text-[#5B6B9E]">R$ {(item.quantidade * item.precoUnitario).toFixed(2)}</p>
+                                                        <p className="text-xl sm:text-2xl font-bold text-[#5B6B9E]">
+                                                            R$ {((item.quantidade || 0) * (item.precoUnitario || 0)).toFixed(2)}
+                                                        </p>
                                                     </div>
                                                     <button 
                                                         type="button" 
