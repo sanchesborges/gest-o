@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Produto, Cliente, Pedido, EntradaEstoque, Pagamento, ItemPedido, StatusPedido, StatusPagamento, MetodoPagamento, Entregador } from '../types';
 import { MOCK_PRODUTOS, MOCK_CLIENTES, MOCK_PEDIDOS, MOCK_ENTRADAS_ESTOQUE, MOCK_PAGAMENTOS, MOCK_ENTREGADORES } from '../constants';
+import { supabase } from '../lib/supabase';
 
 interface AppDataContextType {
   produtos: Produto[];
@@ -65,14 +66,147 @@ const parsePagamentos = (pagamentos: any[]): Pagamento[] => {
 };
 
 export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [produtos, setProdutos] = useState<Produto[]>(() => loadFromStorage('produtos', MOCK_PRODUTOS));
-  const [clientes, setClientes] = useState<Cliente[]>(() => loadFromStorage('clientes', MOCK_CLIENTES));
-  const [pedidos, setPedidos] = useState<Pedido[]>(() => parsePedidos(loadFromStorage('pedidos', MOCK_PEDIDOS)));
-  const [entradasEstoque, setEntradasEstoque] = useState<EntradaEstoque[]>(() => parseEntradasEstoque(loadFromStorage('entradasEstoque', MOCK_ENTRADAS_ESTOQUE)));
-  const [pagamentos, setPagamentos] = useState<Pagamento[]>(() => parsePagamentos(loadFromStorage('pagamentos', MOCK_PAGAMENTOS)));
-  const [entregadores, setEntregadores] = useState<Entregador[]>(() => loadFromStorage('entregadores', MOCK_ENTREGADORES));
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [entradasEstoque, setEntradasEstoque] = useState<EntradaEstoque[]>([]);
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
+  const [entregadores, setEntregadores] = useState<Entregador[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Persist data to localStorage whenever it changes
+  // Load initial data from Supabase
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
+  const loadAllData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Load produtos
+      const { data: produtosData, error: produtosError } = await supabase
+        .from('produtos')
+        .select('*');
+      if (!produtosError && produtosData) {
+        const mappedProdutos = produtosData.map((p: any) => ({
+          id: p.id,
+          nome: p.nome,
+          tipo: p.tipo || 'Biscoito',
+          tamanhoPacote: p.tamanho_pacote,
+          precoPadrao: parseFloat(p.preco_unitario),
+          estoqueMinimo: p.estoque_minimo || 0,
+          estoqueAtual: p.estoque_atual
+        }));
+        setProdutos(mappedProdutos);
+      } else if (produtosError) {
+        console.error('Erro ao carregar produtos:', produtosError);
+        setProdutos(loadFromStorage('produtos', MOCK_PRODUTOS));
+      }
+
+      // Load clientes
+      const { data: clientesData, error: clientesError } = await supabase
+        .from('clientes')
+        .select('*');
+      if (!clientesError && clientesData) {
+        setClientes(clientesData);
+      } else if (clientesError) {
+        console.error('Erro ao carregar clientes:', clientesError);
+        setClientes(loadFromStorage('clientes', MOCK_CLIENTES));
+      }
+
+      // Load entregadores
+      const { data: entregadoresData, error: entregadoresError } = await supabase
+        .from('entregadores')
+        .select('*');
+      if (!entregadoresError && entregadoresData) {
+        setEntregadores(entregadoresData);
+      } else if (entregadoresError) {
+        console.error('Erro ao carregar entregadores:', entregadoresError);
+        setEntregadores(loadFromStorage('entregadores', MOCK_ENTREGADORES));
+      }
+
+      // Load pedidos with itens
+      const { data: pedidosData, error: pedidosError } = await supabase
+        .from('pedidos')
+        .select(`
+          *,
+          itens_pedido (*)
+        `);
+      if (!pedidosError && pedidosData) {
+        const mappedPedidos = pedidosData.map((p: any) => ({
+          id: p.id,
+          clienteId: p.cliente_id,
+          entregadorId: p.entregador_id,
+          data: new Date(p.data),
+          valorTotal: parseFloat(p.valor_total),
+          status: p.status as StatusPedido,
+          statusPagamento: p.status_pagamento as StatusPagamento,
+          dataVencimentoPagamento: new Date(p.data_vencimento_pagamento),
+          assinatura: p.assinatura,
+          itens: p.itens_pedido.map((item: any) => ({
+            produtoId: item.produto_id,
+            quantidade: item.quantidade,
+            precoUnitario: parseFloat(item.preco_unitario)
+          }))
+        }));
+        setPedidos(mappedPedidos);
+      } else if (pedidosError) {
+        console.error('Erro ao carregar pedidos:', pedidosError);
+        setPedidos(parsePedidos(loadFromStorage('pedidos', MOCK_PEDIDOS)));
+      }
+
+      // Load entradas estoque
+      const { data: entradasData, error: entradasError } = await supabase
+        .from('entradas_estoque')
+        .select('*');
+      if (!entradasError && entradasData) {
+        const mappedEntradas = entradasData.map((e: any) => ({
+          id: e.id,
+          produtoId: e.produto_id,
+          quantidade: e.quantidade,
+          fornecedor: e.fornecedor,
+          dataRecebimento: new Date(e.data_recebimento),
+          dataValidade: e.data_validade ? new Date(e.data_validade) : undefined
+        }));
+        setEntradasEstoque(mappedEntradas);
+      } else if (entradasError) {
+        console.error('Erro ao carregar entradas:', entradasError);
+        setEntradasEstoque(parseEntradasEstoque(loadFromStorage('entradasEstoque', MOCK_ENTRADAS_ESTOQUE)));
+      }
+
+      // Load pagamentos
+      const { data: pagamentosData, error: pagamentosError } = await supabase
+        .from('pagamentos')
+        .select('*');
+      if (!pagamentosError && pagamentosData) {
+        const mappedPagamentos = pagamentosData.map((p: any) => ({
+          id: p.id,
+          pedidoId: p.pedido_id,
+          valor: parseFloat(p.valor),
+          metodo: p.metodo as MetodoPagamento,
+          data: new Date(p.data)
+        }));
+        setPagamentos(mappedPagamentos);
+      } else if (pagamentosError) {
+        console.error('Erro ao carregar pagamentos:', pagamentosError);
+        setPagamentos(parsePagamentos(loadFromStorage('pagamentos', MOCK_PAGAMENTOS)));
+      }
+
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      // Fallback to localStorage
+      setProdutos(loadFromStorage('produtos', MOCK_PRODUTOS));
+      setClientes(loadFromStorage('clientes', MOCK_CLIENTES));
+      setEntregadores(loadFromStorage('entregadores', MOCK_ENTREGADORES));
+      setPedidos(parsePedidos(loadFromStorage('pedidos', MOCK_PEDIDOS)));
+      setEntradasEstoque(parseEntradasEstoque(loadFromStorage('entradasEstoque', MOCK_ENTRADAS_ESTOQUE)));
+      setPagamentos(parsePagamentos(loadFromStorage('pagamentos', MOCK_PAGAMENTOS)));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Persist data to localStorage whenever it changes (backup)
   useEffect(() => {
     saveToStorage('produtos', produtos);
   }, [produtos]);
@@ -97,98 +231,328 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     saveToStorage('entregadores', entregadores);
   }, [entregadores]);
 
-  const addProduto = (produtoData: Omit<Produto, 'id' | 'estoqueAtual'>) => {
+  const addProduto = async (produtoData: Omit<Produto, 'id' | 'estoqueAtual'>) => {
     const newProduto: Produto = {
         ...produtoData,
-        id: `p${produtos.length + 1}`,
+        id: `p${Date.now()}`,
         estoqueAtual: 0,
     };
-    setProdutos(prev => [...prev, newProduto]);
+    
+    try {
+      const { error } = await supabase
+        .from('produtos')
+        .insert([{
+          id: newProduto.id,
+          nome: newProduto.nome,
+          tipo: newProduto.tipo,
+          tamanho_pacote: newProduto.tamanhoPacote,
+          preco_unitario: newProduto.precoPadrao,
+          estoque_minimo: newProduto.estoqueMinimo,
+          estoque_atual: newProduto.estoqueAtual
+        }]);
+      
+      if (error) {
+        console.error('Erro ao salvar produto:', error);
+        saveToStorage('produtos', [...produtos, newProduto]);
+      }
+      
+      setProdutos(prev => [...prev, newProduto]);
+    } catch (error) {
+      console.error('Erro ao adicionar produto:', error);
+      saveToStorage('produtos', [...produtos, newProduto]);
+      setProdutos(prev => [...prev, newProduto]);
+    }
   };
 
-  const addCliente = (clienteData: Omit<Cliente, 'id'>) => {
+  const addCliente = async (clienteData: Omit<Cliente, 'id'>) => {
     const newCliente: Cliente = {
         ...clienteData,
-        id: `c${clientes.length + 1}`,
+        id: `c${Date.now()}`,
     };
-    setClientes(prev => [...prev, newCliente]);
+    
+    try {
+      const { error } = await supabase
+        .from('clientes')
+        .insert([newCliente]);
+      
+      if (error) {
+        console.error('Erro ao salvar cliente:', error);
+        saveToStorage('clientes', [...clientes, newCliente]);
+      }
+      
+      setClientes(prev => [...prev, newCliente]);
+    } catch (error) {
+      console.error('Erro ao adicionar cliente:', error);
+      saveToStorage('clientes', [...clientes, newCliente]);
+      setClientes(prev => [...prev, newCliente]);
+    }
   };
   
-  const addPedido = (pedidoData: Omit<Pedido, 'id'>) => {
-    // Update stock
-    setProdutos(prevProdutos => {
-      const newProdutos = [...prevProdutos];
-      pedidoData.itens.forEach(item => {
-        const productIndex = newProdutos.findIndex(p => p.id === item.produtoId);
-        if (productIndex !== -1) {
-          newProdutos[productIndex].estoqueAtual -= item.quantidade;
-        }
-      });
-      return newProdutos;
-    });
-    
+  const addPedido = async (pedidoData: Omit<Pedido, 'id'>) => {
     const newPedido: Pedido = {
         ...pedidoData,
-        id: `o${pedidos.length + 1}`
+        id: `o${Date.now()}`
     };
-    setPedidos(prev => [...prev, newPedido]);
+    
+    try {
+      // Insert pedido
+      const { error: pedidoError } = await supabase
+        .from('pedidos')
+        .insert([{
+          id: newPedido.id,
+          cliente_id: newPedido.clienteId,
+          entregador_id: newPedido.entregadorId,
+          data: newPedido.data.toISOString(),
+          valor_total: newPedido.valorTotal,
+          status: newPedido.status,
+          status_pagamento: newPedido.statusPagamento,
+          data_vencimento_pagamento: newPedido.dataVencimentoPagamento.toISOString(),
+          assinatura: newPedido.assinatura
+        }]);
+      
+      if (pedidoError) {
+        console.error('Erro ao salvar pedido:', pedidoError);
+      }
+      
+      // Insert itens
+      const itensToInsert = newPedido.itens.map((item, index) => ({
+        id: `item${Date.now()}_${index}`,
+        pedido_id: newPedido.id,
+        produto_id: item.produtoId,
+        quantidade: item.quantidade,
+        preco_unitario: item.precoUnitario
+      }));
+      
+      const { error: itensError } = await supabase
+        .from('itens_pedido')
+        .insert(itensToInsert);
+      
+      if (itensError) {
+        console.error('Erro ao salvar itens do pedido:', itensError);
+      }
+      
+      // Update stock in Supabase
+      for (const item of newPedido.itens) {
+        const produto = produtos.find(p => p.id === item.produtoId);
+        if (produto) {
+          const novoEstoque = produto.estoqueAtual - item.quantidade;
+          await supabase
+            .from('produtos')
+            .update({ estoque_atual: novoEstoque })
+            .eq('id', item.produtoId);
+        }
+      }
+      
+      // Update local state
+      setProdutos(prevProdutos => {
+        const newProdutos = [...prevProdutos];
+        newPedido.itens.forEach(item => {
+          const productIndex = newProdutos.findIndex(p => p.id === item.produtoId);
+          if (productIndex !== -1) {
+            newProdutos[productIndex].estoqueAtual -= item.quantidade;
+          }
+        });
+        return newProdutos;
+      });
+      
+      setPedidos(prev => [...prev, newPedido]);
+      
+    } catch (error) {
+      console.error('Erro ao adicionar pedido:', error);
+      // Fallback to localStorage
+      saveToStorage('pedidos', [...pedidos, newPedido]);
+      setPedidos(prev => [...prev, newPedido]);
+    }
   };
 
-  const addEntradaEstoque = (entradaData: Omit<EntradaEstoque, 'id'>) => {
-    setProdutos(prevProdutos => {
-        const newProdutos = [...prevProdutos];
-        const productIndex = newProdutos.findIndex(p => p.id === entradaData.produtoId);
-        if (productIndex !== -1) {
-            newProdutos[productIndex].estoqueAtual += entradaData.quantidade;
-        }
-        return newProdutos;
-    });
-
+  const addEntradaEstoque = async (entradaData: Omit<EntradaEstoque, 'id'>) => {
     const newEntrada: EntradaEstoque = {
         ...entradaData,
-        id: `e${entradasEstoque.length + 1}`
+        id: `e${Date.now()}`
     };
-    setEntradasEstoque(prev => [...prev, newEntrada]);
+    
+    try {
+      // Insert entrada
+      const { error } = await supabase
+        .from('entradas_estoque')
+        .insert([{
+          id: newEntrada.id,
+          produto_id: newEntrada.produtoId,
+          quantidade: newEntrada.quantidade,
+          fornecedor: newEntrada.fornecedor,
+          data_recebimento: newEntrada.dataRecebimento.toISOString(),
+          data_validade: newEntrada.dataValidade?.toISOString()
+        }]);
+      
+      if (error) {
+        console.error('Erro ao salvar entrada de estoque:', error);
+      }
+      
+      // Update stock in Supabase
+      const produto = produtos.find(p => p.id === entradaData.produtoId);
+      if (produto) {
+        const novoEstoque = produto.estoqueAtual + entradaData.quantidade;
+        await supabase
+          .from('produtos')
+          .update({ estoque_atual: novoEstoque })
+          .eq('id', entradaData.produtoId);
+      }
+      
+      // Update local state
+      setProdutos(prevProdutos => {
+          const newProdutos = [...prevProdutos];
+          const productIndex = newProdutos.findIndex(p => p.id === entradaData.produtoId);
+          if (productIndex !== -1) {
+              newProdutos[productIndex].estoqueAtual += entradaData.quantidade;
+          }
+          return newProdutos;
+      });
+
+      setEntradasEstoque(prev => [...prev, newEntrada]);
+      
+    } catch (error) {
+      console.error('Erro ao adicionar entrada de estoque:', error);
+      saveToStorage('entradasEstoque', [...entradasEstoque, newEntrada]);
+      setEntradasEstoque(prev => [...prev, newEntrada]);
+    }
   };
   
-  const addPagamento = (pedidoId: string, valor: number, metodo: MetodoPagamento) => {
+  const addPagamento = async (pedidoId: string, valor: number, metodo: MetodoPagamento) => {
       const newPagamento: Pagamento = {
-          id: `pay${pagamentos.length + 1}`,
+          id: `pay${Date.now()}`,
           pedidoId,
           valor,
           metodo,
           data: new Date()
       };
-      setPagamentos(prev => [...prev, newPagamento]);
-
-      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, statusPagamento: StatusPagamento.PAGO } : p));
-  };
-
-  const updatePedidoStatus = (pedidoId: string, status: StatusPedido, assinatura?: string) => {
-    setPedidos(prev => prev.map(p => {
-        if (p.id === pedidoId) {
-            const updatedPedido: Pedido = { ...p, status };
-            if(assinatura) {
-                updatedPedido.assinatura = assinatura;
-            }
-            return updatedPedido;
+      
+      try {
+        // Insert pagamento
+        const { error: pagamentoError } = await supabase
+          .from('pagamentos')
+          .insert([{
+            id: newPagamento.id,
+            pedido_id: newPagamento.pedidoId,
+            valor: newPagamento.valor,
+            metodo: newPagamento.metodo,
+            data: newPagamento.data.toISOString()
+          }]);
+        
+        if (pagamentoError) {
+          console.error('Erro ao salvar pagamento:', pagamentoError);
         }
-        return p;
-    }));
+        
+        // Update pedido status
+        const { error: pedidoError } = await supabase
+          .from('pedidos')
+          .update({ status_pagamento: StatusPagamento.PAGO })
+          .eq('id', pedidoId);
+        
+        if (pedidoError) {
+          console.error('Erro ao atualizar status do pedido:', pedidoError);
+        }
+        
+        setPagamentos(prev => [...prev, newPagamento]);
+        setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, statusPagamento: StatusPagamento.PAGO } : p));
+        
+      } catch (error) {
+        console.error('Erro ao adicionar pagamento:', error);
+        saveToStorage('pagamentos', [...pagamentos, newPagamento]);
+        setPagamentos(prev => [...prev, newPagamento]);
+        setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, statusPagamento: StatusPagamento.PAGO } : p));
+      }
   };
 
-  const addEntregador = (entregadorData: Omit<Entregador, 'id'>) => {
+  const updatePedidoStatus = async (pedidoId: string, status: StatusPedido, assinatura?: string) => {
+    try {
+      const updateData: any = { status };
+      if (assinatura) {
+        updateData.assinatura = assinatura;
+      }
+      
+      const { error } = await supabase
+        .from('pedidos')
+        .update(updateData)
+        .eq('id', pedidoId);
+      
+      if (error) {
+        console.error('Erro ao atualizar status do pedido:', error);
+      }
+      
+      setPedidos(prev => prev.map(p => {
+          if (p.id === pedidoId) {
+              const updatedPedido: Pedido = { ...p, status };
+              if(assinatura) {
+                  updatedPedido.assinatura = assinatura;
+              }
+              return updatedPedido;
+          }
+          return p;
+      }));
+      
+    } catch (error) {
+      console.error('Erro ao atualizar pedido:', error);
+      setPedidos(prev => prev.map(p => {
+          if (p.id === pedidoId) {
+              const updatedPedido: Pedido = { ...p, status };
+              if(assinatura) {
+                  updatedPedido.assinatura = assinatura;
+              }
+              return updatedPedido;
+          }
+          return p;
+      }));
+    }
+  };
+
+  const addEntregador = async (entregadorData: Omit<Entregador, 'id'>) => {
     const newEntregador: Entregador = {
         ...entregadorData,
-        id: `ent${entregadores.length + 1}`,
+        id: `ent${Date.now()}`,
     };
-    setEntregadores(prev => [...prev, newEntregador]);
+    
+    try {
+      // Save to Supabase
+      const { error } = await supabase
+        .from('entregadores')
+        .insert([newEntregador]);
+      
+      if (error) {
+        console.error('Erro ao salvar entregador no Supabase:', error);
+        // Fallback to localStorage
+        saveToStorage('entregadores', [...entregadores, newEntregador]);
+      }
+      
+      setEntregadores(prev => [...prev, newEntregador]);
+    } catch (error) {
+      console.error('Erro ao adicionar entregador:', error);
+      // Fallback to localStorage
+      saveToStorage('entregadores', [...entregadores, newEntregador]);
+      setEntregadores(prev => [...prev, newEntregador]);
+    }
   };
 
-  const assignEntregador = (pedidoId: string, entregadorId: string) => {
-    setPedidos(prev => prev.map(p => 
-        p.id === pedidoId ? { ...p, entregadorId } : p
-    ));
+  const assignEntregador = async (pedidoId: string, entregadorId: string) => {
+    try {
+      const { error } = await supabase
+        .from('pedidos')
+        .update({ entregador_id: entregadorId })
+        .eq('id', pedidoId);
+      
+      if (error) {
+        console.error('Erro ao atribuir entregador:', error);
+      }
+      
+      setPedidos(prev => prev.map(p => 
+          p.id === pedidoId ? { ...p, entregadorId } : p
+      ));
+      
+    } catch (error) {
+      console.error('Erro ao atribuir entregador:', error);
+      setPedidos(prev => prev.map(p => 
+          p.id === pedidoId ? { ...p, entregadorId } : p
+      ));
+    }
   };
 
   const providerValue = {
