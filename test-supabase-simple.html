@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Supabase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4F46E5;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #4338CA;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #D1FAE5;
+            border: 1px solid #10B981;
+            color: #065F46;
+        }
+        .error {
+            background: #FEE2E2;
+            border: 1px solid #EF4444;
+            color: #991B1B;
+        }
+        .info {
+            background: #DBEAFE;
+            border: 1px solid #3B82F6;
+            color: #1E40AF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Teste de Conexão Supabase</h1>
+        <p>Use este teste para verificar se o Supabase está funcionando corretamente.</p>
+        
+        <div>
+            <button onclick="testConnection()">1. Testar Conexão</button>
+            <button onclick="testTables()">2. Verificar Tabelas</button>
+            <button onclick="testInsert()">3. Testar Inserção</button>
+            <button onclick="clearResults()">Limpar</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const supabaseUrl = 'https://bkwgowsumeylnwbintdz.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrd2dvd3N1bWV5bG53YmludGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxOTQyMjIsImV4cCI6MjA3NTc3MDIyMn0.zCP5mCLyHMO0ag4I11ktRoPEGo_mPAGWP8idLMIwIFU';
+        
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        window.testConnection = async function() {
+            addResult('🔄 Testando conexão com Supabase...', 'info');
+            
+            try {
+                const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`
+                    }
+                });
+                
+                if (response.ok) {
+                    addResult('✅ Conexão OK! Supabase está respondendo.', 'success');
+                } else {
+                    addResult(`❌ Erro na conexão: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Erro ao conectar: ${error.message}\n\nPossíveis causas:\n- Projeto pausado no Supabase\n- Problema de rede\n- Firewall bloqueando`, 'error');
+            }
+        };
+
+        window.testTables = async function() {
+            addResult('🔄 Verificando tabelas...', 'info');
+            
+            const tables = ['produtos', 'clientes', 'entregadores', 'pedidos', 'itens_pedido', 'entradas_estoque', 'pagamentos'];
+            
+            for (const table of tables) {
+                try {
+                    const { data, error, count } = await supabase
+                        .from(table)
+                        .select('*', { count: 'exact', head: true });
+                    
+                    if (error) {
+                        addResult(`❌ ${table}: ${error.message}`, 'error');
+                    } else {
+                        addResult(`✅ ${table}: OK (${count || 0} registros)`, 'success');
+                    }
+                } catch (err) {
+                    addResult(`❌ ${table}: ${err.message}`, 'error');
+                }
+            }
+        };
+
+        window.testInsert = async function() {
+            addResult('🔄 Testando inserção de entregador...', 'info');
+            
+            try {
+                const testEntregador = {
+                    id: `test_${Date.now()}`,
+                    nome: 'Teste Conexão',
+                    telefone: '(00) 00000-0000'
+                };
+                
+                const { data, error } = await supabase
+                    .from('entregadores')
+                    .insert([testEntregador])
+                    .select();
+                
+                if (error) {
+                    addResult(`❌ Erro ao inserir: ${error.message}\n\nDetalhes: ${JSON.stringify(error, null, 2)}`, 'error');
+                } else {
+                    addResult(`✅ Entregador inserido com sucesso!\n\n${JSON.stringify(data, null, 2)}`, 'success');
+                }
+            } catch (err) {
+                addResult(`❌ Erro: ${err.message}`, 'error');
+            }
+        };
+
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = '';
+        };
+
+        // Teste automático ao carregar
+        addResult('📋 Página carregada. Clique nos botões para testar.', 'info');
+    </script>
+</body>
+</html>

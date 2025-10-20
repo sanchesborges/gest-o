@@ -26,8 +26,7 @@ CREATE TABLE IF NOT EXISTS clientes (
 CREATE TABLE IF NOT EXISTS entregadores (
     id TEXT PRIMARY KEY,
     nome TEXT NOT NULL,
-    telefone TEXT NOT NULL,
-    veiculo TEXT NOT NULL,
+    telefone TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
