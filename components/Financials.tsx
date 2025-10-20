@@ -7,9 +7,9 @@ const AddPaymentModal: React.FC<{ pedido: Pedido, onClose: () => void }> = ({ pe
     const { addPagamento } = useAppData();
     const [metodo, setMetodo] = useState<MetodoPagamento>(MetodoPagamento.PIX);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        addPagamento(pedido.id, pedido.valorTotal, metodo);
+        await addPagamento(pedido.id, pedido.valorTotal, metodo);
         onClose();
     }
     

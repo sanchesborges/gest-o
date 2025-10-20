@@ -71,8 +71,8 @@ export const Entregadores: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
-    const handleAddEntregador = (data: { nome: string; telefone: string }) => {
-        addEntregador(data);
+    const handleAddEntregador = async (data: { nome: string; telefone: string }) => {
+        await addEntregador(data);
     };
     
     const handleShare = async (entregadorId: string, entregadorNome: string) => {

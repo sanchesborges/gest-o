@@ -11,9 +11,9 @@ const AddClientModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [telefone, setTelefone] = useState('');
     const [condicaoPagamento, setCondicaoPagamento] = useState<CondicaoPagamento>(CondicaoPagamento.A_VISTA);
     
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        addCliente({ nome, tipo, endereco, telefone, condicaoPagamento });
+        await addCliente({ nome, tipo, endereco, telefone, condicaoPagamento });
         onClose();
     };
 

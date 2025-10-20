@@ -10,14 +10,14 @@ interface AppDataContextType {
   entradasEstoque: EntradaEstoque[];
   pagamentos: Pagamento[];
   entregadores: Entregador[];
-  addProduto: (produto: Omit<Produto, 'id' | 'estoqueAtual'>) => void;
-  addCliente: (cliente: Omit<Cliente, 'id'>) => void;
-  addPedido: (pedido: Omit<Pedido, 'id'>) => void;
-  addEntradaEstoque: (entrada: Omit<EntradaEstoque, 'id'>) => void;
-  addPagamento: (pedidoId: string, valor: number, metodo: MetodoPagamento) => void;
-  updatePedidoStatus: (pedidoId: string, status: StatusPedido, assinatura?: string) => void;
-  addEntregador: (entregador: Omit<Entregador, 'id'>) => void;
-  assignEntregador: (pedidoId: string, entregadorId: string) => void;
+  addProduto: (produto: Omit<Produto, 'id' | 'estoqueAtual'>) => Promise<void>;
+  addCliente: (cliente: Omit<Cliente, 'id'>) => Promise<void>;
+  addPedido: (pedido: Omit<Pedido, 'id'>) => Promise<void>;
+  addEntradaEstoque: (entrada: Omit<EntradaEstoque, 'id'>) => Promise<void>;
+  addPagamento: (pedidoId: string, valor: number, metodo: MetodoPagamento) => Promise<void>;
+  updatePedidoStatus: (pedidoId: string, status: StatusPedido, assinatura?: string) => Promise<void>;
+  addEntregador: (entregador: Omit<Entregador, 'id'>) => Promise<void>;
+  assignEntregador: (pedidoId: string, entregadorId: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);

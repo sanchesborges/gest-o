@@ -85,7 +85,7 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         return itens.reduce((total, item) => total + (item.quantidade * item.precoUnitario), 0);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if(!clienteId || itens.length === 0) {
             alert("Selecione um cliente e adicione pelo menos um item.");
@@ -97,7 +97,7 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         
         const isCashPayment = cliente.condicaoPagamento.includes('vista');
 
-        addPedido({
+        await addPedido({
             clienteId,
             itens,
             data: new Date(),

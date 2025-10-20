@@ -11,7 +11,7 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [precoPadrao, setPrecoPadrao] = useState(0);
     const [estoqueMinimo, setEstoqueMinimo] = useState(10);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!nome.trim() || precoPadrao <= 0 || estoqueMinimo < 0) {
             alert("Por favor, preencha todos os campos corretamente. O preço e o estoque mínimo não podem ser negativos.");
@@ -19,7 +19,7 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         }
         
         const finalNome = `${nome} ${tamanhoPacote}`;
-        addProduto({
+        await addProduto({
             nome: finalNome,
             tipo,
             tamanhoPacote,

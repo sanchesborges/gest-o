@@ -80,7 +80,7 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
     const produtoSelecionado = produtos.find(p => p.id === produtoId);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         // Preparar itens para registro
@@ -93,14 +93,14 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         const registrationDate = new Date();
         
         // Registrar no sistema
-        itemsToRegister.forEach(item => {
-            addEntradaEstoque({
+        for (const item of itemsToRegister) {
+            await addEntradaEstoque({
                 produtoId: item.produtoId,
                 quantidade: item.quantidade,
                 fornecedor,
                 dataRecebimento: registrationDate
             });
-        });
+        }
         
         // Preparar dados para confirmação
         setRegisteredItems(itemsToRegister);
