@@ -120,7 +120,13 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         .from('entregadores')
         .select('*');
       if (!entregadoresError && entregadoresData) {
-        setEntregadores(entregadoresData);
+        const mappedEntregadores = entregadoresData.map((e: any) => ({
+          id: e.id,
+          nome: e.nome,
+          telefone: e.telefone,
+          avatarUrl: e.avatar_url
+        }));
+        setEntregadores(mappedEntregadores);
       } else if (entregadoresError) {
         console.error('Erro ao carregar entregadores:', entregadoresError);
         setEntregadores(loadFromStorage('entregadores', MOCK_ENTREGADORES));
@@ -513,15 +519,23 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
     
     try {
-      // Save to Supabase
+      // Save to Supabase (mapear avatarUrl para avatar_url)
       const { error } = await supabase
         .from('entregadores')
-        .insert([newEntregador]);
+        .insert([{
+          id: newEntregador.id,
+          nome: newEntregador.nome,
+          telefone: newEntregador.telefone,
+          avatar_url: newEntregador.avatarUrl
+        }]);
       
       if (error) {
         console.error('Erro ao salvar entregador no Supabase:', error);
+        console.error('Detalhes do erro:', JSON.stringify(error, null, 2));
         // Fallback to localStorage
         saveToStorage('entregadores', [...entregadores, newEntregador]);
+      } else {
+        console.log('✅ Entregador salvo com sucesso no Supabase!');
       }
       
       setEntregadores(prev => [...prev, newEntregador]);
