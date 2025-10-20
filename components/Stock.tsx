@@ -148,8 +148,8 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const totalItens = itensEntrada.reduce((sum, item) => sum + item.quantidade, 0);
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-start sm:items-center z-50 p-4 pt-8 sm:pt-4 overflow-y-auto" onClick={onClose}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] sm:max-h-[90vh] flex flex-col my-auto" onClick={e => e.stopPropagation()}>
                 {/* Header */}
                 <div className="p-4 sm:p-6 border-b bg-gradient-to-r from-green-600 to-emerald-600 rounded-t-2xl flex-shrink-0">
                     <div className="flex items-center">
