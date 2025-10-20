@@ -3,14 +3,50 @@ import { useAppData } from '../hooks/useAppData';
 import { UserPlus, X, Bike, UserCheck, Phone, Share2, Check, MessageCircle, Trash2 } from 'lucide-react';
 import { StatusPedido } from '../types';
 
-const AddEntregadorModal: React.FC<{ onClose: () => void, onAdd: (data: { nome: string, telefone: string }) => void }> = ({ onClose, onAdd }) => {
+const AddEntregadorModal: React.FC<{ onClose: () => void, onAdd: (data: { nome: string, telefone: string, avatarUrl?: string }) => void }> = ({ onClose, onAdd }) => {
     const [nome, setNome] = useState('');
     const [telefone, setTelefone] = useState('');
+    const [avatarUrl, setAvatarUrl] = useState('');
+    const [isLoadingImage, setIsLoadingImage] = useState(false);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validar tipo de arquivo
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor, selecione apenas arquivos de imagem.');
+            return;
+        }
+
+        // Validar tamanho (máximo 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('A imagem deve ter no máximo 2MB.');
+            return;
+        }
+
+        setIsLoadingImage(true);
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setAvatarUrl(reader.result as string);
+            setIsLoadingImage(false);
+        };
+        reader.onerror = () => {
+            alert('Erro ao carregar a imagem. Tente novamente.');
+            setIsLoadingImage(false);
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (nome.trim()) {
-            onAdd({ nome: nome.trim(), telefone: telefone.trim() });
+            onAdd({ 
+                nome: nome.trim(), 
+                telefone: telefone.trim(),
+                avatarUrl: avatarUrl || undefined
+            });
             onClose();
         }
     };
@@ -54,6 +90,45 @@ const AddEntregadorModal: React.FC<{ onClose: () => void, onAdd: (data: { nome: 
                             placeholder="(11) 98765-4321"
                         />
                     </div>
+                    <div>
+                        <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">
+                            Foto do Entregador (opcional)
+                        </label>
+                        <div className="mt-1 flex items-center gap-4">
+                            <input
+                                type="file"
+                                id="avatar"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                disabled={isLoadingImage}
+                            />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Selecione uma foto do seu dispositivo (máximo 2MB)
+                        </p>
+                        {isLoadingImage && (
+                            <div className="mt-2 text-sm text-gray-600">
+                                Carregando imagem...
+                            </div>
+                        )}
+                        {avatarUrl && !isLoadingImage && (
+                            <div className="mt-3 flex items-center gap-3">
+                                <img 
+                                    src={avatarUrl} 
+                                    alt="Preview" 
+                                    className="w-20 h-20 rounded-full object-cover border-2 border-indigo-300"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setAvatarUrl('')}
+                                    className="text-sm text-red-600 hover:text-red-700 font-medium"
+                                >
+                                    Remover foto
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     {/* Footer with buttons */}
                     <div className="flex justify-end space-x-4 pt-4">
                         <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancelar</button>
@@ -71,7 +146,7 @@ export const Entregadores: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
-    const handleAddEntregador = async (data: { nome: string; telefone: string }) => {
+    const handleAddEntregador = async (data: { nome: string; telefone: string; avatarUrl?: string }) => {
         await addEntregador(data);
     };
 
@@ -172,9 +247,21 @@ export const Entregadores: React.FC = () => {
                         <div key={entregador.id} className="bg-white p-5 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex items-center">
-                                    <div className="p-3 bg-indigo-100 rounded-full mr-3">
-                                        <UserCheck className="text-indigo-600" size={24}/>
-                                    </div>
+                                    {entregador.avatarUrl ? (
+                                        <img 
+                                            src={entregador.avatarUrl} 
+                                            alt={entregador.nome}
+                                            className="w-14 h-14 rounded-full object-cover border-2 border-indigo-200 mr-3"
+                                            onError={(e) => {
+                                                const img = e.target as HTMLImageElement;
+                                                img.style.display = 'none';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="p-3 bg-indigo-100 rounded-full mr-3">
+                                            <UserCheck className="text-indigo-600" size={24}/>
+                                        </div>
+                                    )}
                                     <div>
                                         <h3 className="text-lg font-bold text-indigo-800">{entregador.nome}</h3>
                                         {pendingDeliveries.length > 0 && (

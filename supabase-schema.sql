@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS entregadores (
     id TEXT PRIMARY KEY,
     nome TEXT NOT NULL,
     telefone TEXT,
+    avatar_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

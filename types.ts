@@ -106,6 +106,7 @@ export interface Entregador {
   id: string;
   nome: string;
   telefone?: string;
+  avatarUrl?: string;
 }
 
 export enum UserRole {
