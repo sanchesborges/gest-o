@@ -167,6 +167,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         .from('entradas_estoque')
         .select('*');
       if (!entradasError && entradasData) {
+        console.log(`📦 Carregadas ${entradasData.length} entradas de estoque do Supabase`);
         const mappedEntradas = entradasData.map((e: any) => ({
           id: e.id,
           produtoId: e.produto_id,
@@ -177,7 +178,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         }));
         setEntradasEstoque(mappedEntradas);
       } else if (entradasError) {
-        console.error('Erro ao carregar entradas:', entradasError);
+        console.error('❌ Erro ao carregar entradas:', entradasError);
         setEntradasEstoque(parseEntradasEstoque(loadFromStorage('entradasEstoque', MOCK_ENTRADAS_ESTOQUE)));
       }
 
@@ -379,6 +380,13 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
     
     try {
+      console.log('📦 Salvando entrada de estoque:', {
+        id: newEntrada.id,
+        produto_id: newEntrada.produtoId,
+        quantidade: newEntrada.quantidade,
+        fornecedor: newEntrada.fornecedor
+      });
+      
       // Insert entrada
       const { error } = await supabase
         .from('entradas_estoque')
@@ -392,7 +400,12 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         }]);
       
       if (error) {
-        console.error('Erro ao salvar entrada de estoque:', error);
+        console.error('❌ Erro ao salvar entrada de estoque no Supabase:', error);
+        console.error('Detalhes:', JSON.stringify(error, null, 2));
+        // Fallback to localStorage
+        saveToStorage('entradasEstoque', [...entradasEstoque, newEntrada]);
+      } else {
+        console.log('✅ Entrada de estoque salva com sucesso no Supabase!');
       }
       
       // Update stock in Supabase
