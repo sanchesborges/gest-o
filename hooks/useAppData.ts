@@ -17,6 +17,7 @@ interface AppDataContextType {
   addPagamento: (pedidoId: string, valor: number, metodo: MetodoPagamento) => Promise<void>;
   updatePedidoStatus: (pedidoId: string, status: StatusPedido, assinatura?: string) => Promise<void>;
   addEntregador: (entregador: Omit<Entregador, 'id'>) => Promise<void>;
+  deleteEntregador: (entregadorId: string) => Promise<void>;
   assignEntregador: (pedidoId: string, entregadorId: string) => Promise<void>;
 }
 
@@ -532,6 +533,33 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  const deleteEntregador = async (entregadorId: string) => {
+    try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('entregadores')
+        .delete()
+        .eq('id', entregadorId);
+      
+      if (error) {
+        console.error('Erro ao excluir entregador do Supabase:', error);
+        // Fallback to localStorage
+        const updatedEntregadores = entregadores.filter(e => e.id !== entregadorId);
+        saveToStorage('entregadores', updatedEntregadores);
+      }
+      
+      // Update local state
+      setEntregadores(prev => prev.filter(e => e.id !== entregadorId));
+      
+    } catch (error) {
+      console.error('Erro ao excluir entregador:', error);
+      // Fallback to localStorage
+      const updatedEntregadores = entregadores.filter(e => e.id !== entregadorId);
+      saveToStorage('entregadores', updatedEntregadores);
+      setEntregadores(prev => prev.filter(e => e.id !== entregadorId));
+    }
+  };
+
   const assignEntregador = async (pedidoId: string, entregadorId: string) => {
     try {
       const { error } = await supabase
@@ -569,6 +597,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     addPagamento,
     updatePedidoStatus,
     addEntregador,
+    deleteEntregador,
     assignEntregador,
   };
 

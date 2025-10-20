@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { UserPlus, X, Bike, UserCheck, Phone, Share2, Check, MessageCircle } from 'lucide-react';
+import { UserPlus, X, Bike, UserCheck, Phone, Share2, Check, MessageCircle, Trash2 } from 'lucide-react';
 import { StatusPedido } from '../types';
 
 const AddEntregadorModal: React.FC<{ onClose: () => void, onAdd: (data: { nome: string, telefone: string }) => void }> = ({ onClose, onAdd }) => {
@@ -67,12 +67,22 @@ const AddEntregadorModal: React.FC<{ onClose: () => void, onAdd: (data: { nome: 
 
 
 export const Entregadores: React.FC = () => {
-    const { entregadores, pedidos, clientes, addEntregador } = useAppData();
+    const { entregadores, pedidos, clientes, addEntregador, deleteEntregador } = useAppData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const handleAddEntregador = async (data: { nome: string; telefone: string }) => {
         await addEntregador(data);
+    };
+
+    const handleDeleteEntregador = async (entregadorId: string, entregadorNome: string) => {
+        const confirmar = window.confirm(
+            `Tem certeza que deseja excluir o entregador "${entregadorNome}"?\n\nEsta ação não pode ser desfeita.`
+        );
+        
+        if (confirmar) {
+            await deleteEntregador(entregadorId);
+        }
     };
     
     const handleShare = async (entregadorId: string, entregadorNome: string) => {
@@ -192,29 +202,39 @@ export const Entregadores: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="flex gap-2 pt-3 border-t">
+                            <div className="space-y-2 pt-3 border-t">
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleShareWhatsApp(entregador)}
+                                        className="flex-1 bg-green-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-green-700 transition-colors text-sm"
+                                    >
+                                        <MessageCircle size={16} className="mr-2" />
+                                        WhatsApp
+                                    </button>
+                                    <button
+                                        onClick={() => handleShare(entregador.id, entregador.nome)}
+                                        className="flex-1 bg-indigo-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors text-sm"
+                                    >
+                                        {copiedId === entregador.id ? (
+                                            <>
+                                                <Check size={16} className="mr-2" />
+                                                Copiado!
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Share2 size={16} className="mr-2" />
+                                                Copiar Link
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                                 <button
-                                    onClick={() => handleShareWhatsApp(entregador)}
-                                    className="flex-1 bg-green-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-green-700 transition-colors text-sm"
+                                    onClick={() => handleDeleteEntregador(entregador.id, entregador.nome)}
+                                    className="w-full bg-red-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-red-700 transition-colors text-sm"
+                                    title="Excluir entregador"
                                 >
-                                    <MessageCircle size={16} className="mr-2" />
-                                    WhatsApp
-                                </button>
-                                <button
-                                    onClick={() => handleShare(entregador.id, entregador.nome)}
-                                    className="flex-1 bg-indigo-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors text-sm"
-                                >
-                                    {copiedId === entregador.id ? (
-                                        <>
-                                            <Check size={16} className="mr-2" />
-                                            Copiado!
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Share2 size={16} className="mr-2" />
-                                            Copiar Link
-                                        </>
-                                    )}
+                                    <Trash2 size={16} className="mr-2" />
+                                    Excluir
                                 </button>
                             </div>
                         </div>
