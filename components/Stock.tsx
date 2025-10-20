@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { PlusCircle, Package, TrendingUp, TrendingDown, Box } from 'lucide-react';
+import { PlusCircle, Package, TrendingUp, TrendingDown, Box, Plus, Minus, Trash2, ShoppingCart } from 'lucide-react';
 import { Produto, UserRole } from '../types';
 import { Link } from 'react-router-dom';
+import { OrderConfirmationModal } from './OrderConfirmationModal';
 
 // Card component for mobile view
 const StockCard: React.FC<{ produto: Produto }> = ({ produto }) => {
@@ -60,27 +61,91 @@ const StockRow: React.FC<{ produto: Produto }> = ({ produto }) => {
 };
 
 
+interface ItemEntrada {
+    id: string;
+    produtoId: string;
+    quantidade: number;
+}
+
 const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { produtos, addEntradaEstoque } = useAppData();
     const [produtoId, setProdutoId] = useState(produtos[0]?.id || '');
     const [quantidade, setQuantidade] = useState(1);
     const [fornecedor, setFornecedor] = useState('Fábrica Matriz');
+    const [itensEntrada, setItensEntrada] = useState<ItemEntrada[]>([]);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [registeredItems, setRegisteredItems] = useState<ItemEntrada[]>([]);
+    const [registeredDate, setRegisteredDate] = useState<Date>(new Date());
+    const [registeredFornecedor, setRegisteredFornecedor] = useState('');
 
     const produtoSelecionado = produtos.find(p => p.id === produtoId);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        addEntradaEstoque({
+        
+        // Preparar itens para registro
+        const itemsToRegister = itensEntrada.length > 0 ? itensEntrada : [{
+            id: Date.now().toString(),
             produtoId,
-            quantidade,
-            fornecedor,
-            dataRecebimento: new Date()
+            quantidade
+        }];
+        
+        const registrationDate = new Date();
+        
+        // Registrar no sistema
+        itemsToRegister.forEach(item => {
+            addEntradaEstoque({
+                produtoId: item.produtoId,
+                quantidade: item.quantidade,
+                fornecedor,
+                dataRecebimento: registrationDate
+            });
         });
+        
+        // Preparar dados para confirmação
+        setRegisteredItems(itemsToRegister);
+        setRegisteredDate(registrationDate);
+        setRegisteredFornecedor(fornecedor);
+        setShowConfirmation(true);
+    };
+
+    const handleCloseAll = () => {
+        setShowConfirmation(false);
         onClose();
+    };
+
+    const handleAddToList = () => {
+        // Verificar se o produto já está na lista
+        const produtoJaAdicionado = itensEntrada.find(item => item.produtoId === produtoId);
+        
+        if (produtoJaAdicionado) {
+            // Se já existe, atualizar a quantidade
+            setItensEntrada(itensEntrada.map(item => 
+                item.produtoId === produtoId 
+                    ? { ...item, quantidade: item.quantidade + quantidade }
+                    : item
+            ));
+        } else {
+            // Se não existe, adicionar novo item
+            setItensEntrada([...itensEntrada, {
+                id: Date.now().toString(),
+                produtoId,
+                quantidade
+            }]);
+        }
+        
+        // Resetar quantidade para 1
+        setQuantidade(1);
+    };
+
+    const handleRemoveFromList = (id: string) => {
+        setItensEntrada(itensEntrada.filter(item => item.id !== id));
     };
 
     const handleIncrement = () => setQuantidade(prev => prev + 1);
     const handleDecrement = () => setQuantidade(prev => prev > 1 ? prev - 1 : 1);
+
+    const totalItens = itensEntrada.reduce((sum, item) => sum + item.quantidade, 0);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
@@ -99,7 +164,7 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 </div>
                 
                 {/* Form Content */}
-                <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
+                <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
                     {/* Produto Selection */}
                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-3 sm:p-5 rounded-xl border border-blue-100">
                         <label htmlFor="produto" className="block text-xs sm:text-sm font-bold text-gray-700 mb-2 flex items-center">
@@ -142,9 +207,10 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             <button 
                                 type="button" 
                                 onClick={handleDecrement}
-                                className="bg-white border-2 border-gray-300 text-gray-700 p-2 sm:p-4 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors shadow-md"
+                                className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white p-3 sm:p-4 rounded-xl transition-colors shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                                aria-label="Diminuir quantidade"
                             >
-                                <TrendingDown size={20}/>
+                                <Minus size={24} strokeWidth={3}/>
                             </button>
                             <div className="flex-1 text-center bg-white p-3 sm:p-4 rounded-xl border-2 border-green-600 shadow-md">
                                 <input 
@@ -160,9 +226,10 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             <button 
                                 type="button" 
                                 onClick={handleIncrement}
-                                className="bg-white border-2 border-gray-300 text-gray-700 p-2 sm:p-4 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors shadow-md"
+                                className="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white p-3 sm:p-4 rounded-xl transition-colors shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                                aria-label="Aumentar quantidade"
                             >
-                                <TrendingUp size={20}/>
+                                <Plus size={24} strokeWidth={3}/>
                             </button>
                         </div>
                         
@@ -179,7 +246,56 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 </div>
                             </div>
                         )}
+
+                        {/* Botão Adicionar à Lista */}
+                        <button
+                            type="button"
+                            onClick={handleAddToList}
+                            className="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                            <ShoppingCart size={18} />
+                            Adicionar à Lista
+                        </button>
                     </div>
+
+                    {/* Lista de Produtos Adicionados */}
+                    {itensEntrada.length > 0 && (
+                        <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-3 sm:p-5 rounded-xl border border-yellow-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm sm:text-base font-bold text-gray-800 flex items-center">
+                                    <ShoppingCart size={18} className="mr-2" />
+                                    Produtos na Lista ({itensEntrada.length})
+                                </h3>
+                                <span className="text-xs sm:text-sm font-semibold text-gray-600">
+                                    Total: {totalItens} unidades
+                                </span>
+                            </div>
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {itensEntrada.map(item => {
+                                    const produto = produtos.find(p => p.id === item.produtoId);
+                                    return (
+                                        <div key={item.id} className="bg-white p-3 rounded-lg border border-yellow-300 flex items-center justify-between">
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-gray-800 text-sm">{produto?.nome}</p>
+                                                <p className="text-xs text-gray-600">{produto?.tamanhoPacote}</p>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-bold text-green-600 text-lg">{item.quantidade}x</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveFromList(item.id)}
+                                                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                                                    aria-label="Remover item"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Fornecedor */}
                     <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-3 sm:p-5 rounded-xl border border-purple-100">
@@ -196,7 +312,7 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             className="w-full p-2 sm:p-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent text-gray-900 font-medium text-sm sm:text-base"
                         />
                     </div>
-                </form>
+                </div>
 
                 {/* Footer */}
                 <div className="flex-shrink-0 p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl border-t-2 border-gray-200">
@@ -209,17 +325,30 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             Cancelar
                         </button>
                         <button 
-                            type="submit" 
+                            type="button" 
                             onClick={handleSubmit}
-                            className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-2 sm:py-3 px-4 sm:px-8 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg flex-1 sm:flex-initial flex items-center justify-center text-sm sm:text-base"
+                            disabled={itensEntrada.length === 0 && quantidade < 1}
+                            className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-2 sm:py-3 px-4 sm:px-8 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg flex-1 sm:flex-initial flex items-center justify-center text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <PlusCircle className="mr-1 sm:mr-2" size={18} />
-                            <span className="hidden sm:inline">Registrar Entrada</span>
+                            <span className="hidden sm:inline">
+                                {itensEntrada.length > 0 ? `Registrar ${itensEntrada.length} ${itensEntrada.length === 1 ? 'Produto' : 'Produtos'}` : 'Registrar Entrada'}
+                            </span>
                             <span className="sm:hidden">Registrar</span>
                         </button>
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Confirmação */}
+            {showConfirmation && (
+                <OrderConfirmationModal
+                    produtos={registeredItems}
+                    fornecedor={registeredFornecedor}
+                    dataRegistro={registeredDate}
+                    onClose={handleCloseAll}
+                />
+            )}
         </div>
     )
 }

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
-import { Home, Package, ShoppingCart, Users, DollarSign } from 'lucide-react';
+import { Home, Package, ShoppingCart, Users, DollarSign, FileText } from 'lucide-react';
 import { Home as HomePage } from './components/Home';
 import { Dashboard } from './components/Dashboard';
 import { Graficos } from './components/Graficos';
@@ -9,6 +9,7 @@ import { Stock } from './components/Stock';
 import { Orders } from './components/Orders';
 import { Clients } from './components/Clients';
 import { Financials } from './components/Financials';
+import { Reports } from './components/Reports';
 import { AppDataProvider } from './hooks/useAppData';
 import { UserRole } from './types';
 import { Products } from './components/Products';
@@ -104,6 +105,7 @@ const AdminPortal: React.FC = () => {
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/graficos" element={<Graficos />} />
+                    <Route path="/relatorios" element={<Reports />} />
                     <Route path="/entregador-view" element={<Dashboard userRole={UserRole.ENTREGADOR} />} />
                     <Route path="/estoque" element={<Stock userRole={userRole} />} />
                     <Route path="/produtos" element={<Products userRole={userRole} />} />

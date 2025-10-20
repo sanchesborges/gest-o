@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Package, ShoppingCart, Users, Bike, UserCheck, DollarSign, TrendingUp, Clock, AlertCircle } from 'lucide-react';
+import { BarChart3, Package, ShoppingCart, Users, Bike, FileText, DollarSign, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 import { useAppData } from '../hooks/useAppData';
 import { StatusPagamento } from '../types';
 
@@ -86,10 +86,10 @@ export const Home: React.FC = () => {
             path: '/clientes'
         },
         {
-            icon: <UserCheck size={28} className="text-white" />,
-            label: 'Entregas',
+            icon: <FileText size={28} className="text-white" />,
+            label: 'Relatórios',
             color: 'bg-gradient-to-br from-purple-400 to-purple-500',
-            path: '/entregador-view'
+            path: '/relatorios'
         },
         {
             icon: <Bike size={28} className="text-white" />,
