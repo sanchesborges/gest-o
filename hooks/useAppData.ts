@@ -248,9 +248,12 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [entregadores]);
 
   const addProduto = async (produtoData: Omit<Produto, 'id' | 'estoqueAtual'>) => {
+    // Gerar UUID válido
+    const uuid = crypto.randomUUID();
+    
     const newProduto: Produto = {
         ...produtoData,
-        id: `p${Date.now()}`,
+        id: uuid,
         estoqueAtual: 0,
     };
     
