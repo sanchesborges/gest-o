@@ -14,6 +14,7 @@ interface AppDataContextType {
   deleteProduto: (produtoId: string) => Promise<void>;
   addCliente: (cliente: Omit<Cliente, 'id'>) => Promise<void>;
   addPedido: (pedido: Omit<Pedido, 'id'>) => Promise<void>;
+  deletePedido: (pedidoId: string) => Promise<void>;
   addEntradaEstoque: (entrada: Omit<EntradaEstoque, 'id'>) => Promise<void>;
   addPagamento: (pedidoId: string, valor: number, metodo: MetodoPagamento) => Promise<void>;
   updatePedidoStatus: (pedidoId: string, status: StatusPedido, assinatura?: string) => Promise<void>;
@@ -423,6 +424,77 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  const deletePedido = async (pedidoId: string) => {
+    const pedido = pedidos.find(p => p.id === pedidoId);
+    console.log(`🗑️ Tentando excluir pedido: ${pedidoId}`);
+    
+    try {
+      // Delete from Supabase (itens_pedido será deletado automaticamente se CASCADE estiver configurado)
+      const { data, error } = await supabase
+        .from('pedidos')
+        .delete()
+        .eq('id', pedidoId)
+        .select();
+      
+      if (error) {
+        console.error('❌ ERRO ao excluir pedido do Supabase:', error);
+        console.error('   Código:', error.code);
+        console.error('   Mensagem:', error.message);
+        console.error('   Detalhes:', error.details);
+        console.error('   Hint:', error.hint);
+        
+        // Fallback to localStorage
+        const updatedPedidos = pedidos.filter(p => p.id !== pedidoId);
+        saveToStorage('pedidos', updatedPedidos);
+        
+        alert(`Erro ao excluir pedido: ${error.message}\n\nO pedido foi removido localmente, mas pode reaparecer ao recarregar a página.`);
+      } else {
+        console.log(`✅ Pedido excluído com sucesso do Supabase:`, data);
+        
+        // Se o pedido foi excluído, restaurar o estoque dos produtos
+        if (pedido && pedido.status === StatusPedido.PENDENTE) {
+          console.log('📦 Restaurando estoque dos produtos...');
+          for (const item of pedido.itens) {
+            const produto = produtos.find(p => p.id === item.produtoId);
+            if (produto) {
+              const novoEstoque = produto.estoqueAtual + item.quantidade;
+              await supabase
+                .from('produtos')
+                .update({ estoque_atual: novoEstoque })
+                .eq('id', item.produtoId);
+              
+              console.log(`  ✅ Estoque de ${produto.nome} restaurado: +${item.quantidade}`);
+            }
+          }
+          
+          // Atualizar estado local dos produtos
+          setProdutos(prevProdutos => {
+            const newProdutos = [...prevProdutos];
+            pedido.itens.forEach(item => {
+              const productIndex = newProdutos.findIndex(p => p.id === item.produtoId);
+              if (productIndex !== -1) {
+                newProdutos[productIndex].estoqueAtual += item.quantidade;
+              }
+            });
+            return newProdutos;
+          });
+        }
+      }
+      
+      // Update local state
+      setPedidos(prev => prev.filter(p => p.id !== pedidoId));
+      
+    } catch (error) {
+      console.error('❌ Exceção ao excluir pedido:', error);
+      // Fallback to localStorage
+      const updatedPedidos = pedidos.filter(p => p.id !== pedidoId);
+      saveToStorage('pedidos', updatedPedidos);
+      setPedidos(prev => prev.filter(p => p.id !== pedidoId));
+      
+      alert(`Erro inesperado ao excluir pedido. Verifique o console para mais detalhes.`);
+    }
+  };
+
   const addEntradaEstoque = async (entradaData: Omit<EntradaEstoque, 'id'>) => {
     const tempId = `e${Date.now()}`;
     const newEntrada: EntradaEstoque = { ...entradaData, id: tempId };
@@ -663,6 +735,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     deleteProduto,
     addCliente,
     addPedido,
+    deletePedido,
     addEntradaEstoque,
     addPagamento,
     updatePedidoStatus,

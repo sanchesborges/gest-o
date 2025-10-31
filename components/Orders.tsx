@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { PlusCircle, ShoppingCart, Printer, Filter, Bike, X } from 'lucide-react';
+import { PlusCircle, ShoppingCart, Printer, Filter, Bike, X, Trash2 } from 'lucide-react';
 import { Pedido, StatusPedido, StatusPagamento, UserRole } from '../types';
 import { OrderForm } from './OrderForm';
 import { DeliveryNote } from './DeliveryNote';
@@ -119,7 +119,14 @@ const AssignDriverModal: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ 
 };
 
 // Card component for mobile view
-const OrderCard: React.FC<{ pedido: Pedido, onOpenNote: (pedido: Pedido) => void, onOpenAssign: (pedido: Pedido) => void, userRole: UserRole }> = ({ pedido, onOpenNote, onOpenAssign, userRole }) => {
+const OrderCard: React.FC<{ 
+    pedido: Pedido; 
+    onOpenNote: (pedido: Pedido) => void; 
+    onOpenAssign: (pedido: Pedido) => void; 
+    userRole: UserRole;
+    isSelected: boolean;
+    onToggleSelect: (id: string) => void;
+}> = ({ pedido, onOpenNote, onOpenAssign, userRole, isSelected, onToggleSelect }) => {
     const { clientes, entregadores } = useAppData();
     const cliente = clientes.find(c => c.id === pedido.clienteId);
     const entregador = entregadores.find(e => e.id === pedido.entregadorId);
@@ -127,9 +134,19 @@ const OrderCard: React.FC<{ pedido: Pedido, onOpenNote: (pedido: Pedido) => void
     return (
         <div className="bg-white rounded-2xl shadow-lg p-5 mb-4 transform hover:scale-105 transition-transform duration-300">
             <div className="flex justify-between items-start">
-                <div>
-                    <h3 className="font-bold text-lg text-gray-800">{cliente?.nome || 'Cliente não encontrado'}</h3>
-                    <p className="text-sm text-gray-500">Pedido #{pedido.id.toUpperCase()}</p>
+                <div className="flex items-start gap-3 flex-1">
+                    {userRole === UserRole.ADMIN && (
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => onToggleSelect(pedido.id)}
+                            className="mt-1 w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+                        />
+                    )}
+                    <div>
+                        <h3 className="font-bold text-lg text-gray-800">{cliente?.nome || 'Cliente não encontrado'}</h3>
+                        <p className="text-sm text-gray-500">Pedido #{pedido.id.toUpperCase()}</p>
+                    </div>
                 </div>
                 <p className="text-sm text-gray-600 font-medium">{pedido.data.toLocaleDateString('pt-BR')}</p>
             </div>
@@ -176,13 +193,30 @@ const OrderCard: React.FC<{ pedido: Pedido, onOpenNote: (pedido: Pedido) => void
 };
 
 
-const OrderRow: React.FC<{ pedido: Pedido, onOpenNote: (pedido: Pedido) => void, onOpenAssign: (pedido: Pedido) => void, userRole: UserRole }> = ({ pedido, onOpenNote, onOpenAssign, userRole }) => {
+const OrderRow: React.FC<{ 
+    pedido: Pedido; 
+    onOpenNote: (pedido: Pedido) => void; 
+    onOpenAssign: (pedido: Pedido) => void; 
+    userRole: UserRole;
+    isSelected: boolean;
+    onToggleSelect: (id: string) => void;
+}> = ({ pedido, onOpenNote, onOpenAssign, userRole, isSelected, onToggleSelect }) => {
     const { clientes, entregadores } = useAppData();
     const cliente = clientes.find(c => c.id === pedido.clienteId);
     const entregador = entregadores.find(e => e.id === pedido.entregadorId);
 
     return (
         <tr className="border-b border-gray-200 hover:bg-gray-100">
+            {userRole === UserRole.ADMIN && (
+                <td className="py-3 px-6 text-center">
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onToggleSelect(pedido.id)}
+                        className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+                    />
+                </td>
+            )}
             <td className="py-3 px-6 text-left">{pedido.id.toUpperCase()}</td>
             <td className="py-3 px-6 text-left">{cliente?.nome || 'N/A'}</td>
             <td className="py-3 px-6 text-center">{pedido.data.toLocaleDateString('pt-BR')}</td>
@@ -211,12 +245,14 @@ const OrderRow: React.FC<{ pedido: Pedido, onOpenNote: (pedido: Pedido) => void,
 };
 
 export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
-    const { pedidos, clientes } = useAppData();
+    const { pedidos, clientes, deletePedido } = useAppData();
     const { entregadorId } = useParams<{ entregadorId: string }>();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isNoteOpen, setIsNoteOpen] = useState(false);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
+    const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const [statusFilter, setStatusFilter] = useState<StatusPedido | 'Todos'>('Todos');
     const [clientFilter, setClientFilter] = useState<string>('Todos');
@@ -226,6 +262,34 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
     const initialPedidos = isEntregadorView && entregadorId
         ? pedidos.filter(p => p.entregadorId === entregadorId)
         : pedidos;
+
+    const handleToggleSelect = (pedidoId: string) => {
+        setSelectedOrders(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(pedidoId)) {
+                newSet.delete(pedidoId);
+            } else {
+                newSet.add(pedidoId);
+            }
+            return newSet;
+        });
+    };
+
+    const handleSelectAll = () => {
+        if (selectedOrders.size === filteredPedidos.length) {
+            setSelectedOrders(new Set());
+        } else {
+            setSelectedOrders(new Set(filteredPedidos.map(p => p.id)));
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        for (const pedidoId of selectedOrders) {
+            await deletePedido(pedidoId);
+        }
+        setSelectedOrders(new Set());
+        setShowDeleteConfirm(false);
+    };
 
     const handleOpenNote = (pedido: Pedido) => {
         setSelectedOrder(pedido);
@@ -255,14 +319,52 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
             {isNoteOpen && selectedOrder && <DeliveryNote pedido={selectedOrder} onClose={handleCloseModals} />}
             {isAssignModalOpen && selectedOrder && userRole === UserRole.ADMIN && <AssignDriverModal pedido={selectedOrder} onClose={handleCloseModals} />}
 
+            {/* Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={() => setShowDeleteConfirm(false)}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">Confirmar Exclusão</h3>
+                        <p className="text-gray-600 mb-6">
+                            Tem certeza que deseja excluir {selectedOrders.size} {selectedOrders.size === 1 ? 'pedido' : 'pedidos'}? 
+                            Esta ação não pode ser desfeita.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                className="bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleDeleteSelected}
+                                className="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <h2 className="text-3xl font-bold text-gray-800 flex items-center"><ShoppingCart className="mr-3" size={32} /> Gestão de Pedidos</h2>
-                {userRole === UserRole.ADMIN && (
-                    <button onClick={() => setIsFormOpen(true)} className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors w-full sm:w-auto">
-                        <PlusCircle className="mr-2" size={20} />
-                        Novo Pedido
-                    </button>
-                )}
+                <div className="flex flex-col sm:flex-row-reverse gap-2 w-full sm:w-auto">
+                    {userRole === UserRole.ADMIN && selectedOrders.size > 0 && (
+                        <button 
+                            onClick={() => setShowDeleteConfirm(true)} 
+                            className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-red-700 transition-colors w-full sm:w-auto"
+                        >
+                            <Trash2 className="mr-2" size={20} />
+                            Excluir ({selectedOrders.size})
+                        </button>
+                    )}
+                    {userRole === UserRole.ADMIN && (
+                        <button onClick={() => setIsFormOpen(true)} className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors w-full sm:w-auto">
+                            <PlusCircle className="mr-2" size={20} />
+                            Novo Pedido
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="bg-white p-4 rounded-lg shadow-md">
@@ -311,7 +413,17 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                 <>
                     {/* Mobile View - Cards */}
                     <div className="md:hidden">
-                        {filteredPedidos.map(p => <OrderCard key={p.id} pedido={p} onOpenNote={handleOpenNote} onOpenAssign={handleOpenAssignModal} userRole={userRole} />)}
+                        {filteredPedidos.map(p => (
+                            <OrderCard 
+                                key={p.id} 
+                                pedido={p} 
+                                onOpenNote={handleOpenNote} 
+                                onOpenAssign={handleOpenAssignModal} 
+                                userRole={userRole}
+                                isSelected={selectedOrders.has(p.id)}
+                                onToggleSelect={handleToggleSelect}
+                            />
+                        ))}
                     </div>
 
                     {/* Desktop View - Table */}
@@ -320,6 +432,16 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                             <table className="min-w-full bg-white">
                                 <thead className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
                                     <tr>
+                                        {userRole === UserRole.ADMIN && (
+                                            <th className="py-3 px-6 text-center">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedOrders.size === filteredPedidos.length && filteredPedidos.length > 0}
+                                                    onChange={handleSelectAll}
+                                                    className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+                                                />
+                                            </th>
+                                        )}
                                         <th className="py-3 px-6 text-left">Pedido</th>
                                         <th className="py-3 px-6 text-left">Cliente</th>
                                         <th className="py-3 px-6 text-center">Data</th>
@@ -331,7 +453,17 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                                     </tr>
                                 </thead>
                                 <tbody className="text-gray-600 text-sm font-light">
-                                    {filteredPedidos.map(p => <OrderRow key={p.id} pedido={p} onOpenNote={handleOpenNote} onOpenAssign={handleOpenAssignModal} userRole={userRole} />)}
+                                    {filteredPedidos.map(p => (
+                                        <OrderRow 
+                                            key={p.id} 
+                                            pedido={p} 
+                                            onOpenNote={handleOpenNote} 
+                                            onOpenAssign={handleOpenAssignModal} 
+                                            userRole={userRole}
+                                            isSelected={selectedOrders.has(p.id)}
+                                            onToggleSelect={handleToggleSelect}
+                                        />
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
