@@ -563,10 +563,19 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Atualizar estoque no Supabase também
         const produto = produtos.find(p => p.id === entradaData.produtoId);
         if (produto) {
-          await supabase
+          const novoEstoque = produto.estoqueAtual + entradaData.quantidade;
+          console.log(`📦 Atualizando estoque de ${produto.nome}: ${produto.estoqueAtual} + ${entradaData.quantidade} = ${novoEstoque}`);
+          
+          const { error: updateError } = await supabase
             .from('produtos')
-            .update({ estoque_atual: produto.estoqueAtual + entradaData.quantidade })
+            .update({ estoque_atual: novoEstoque })
             .eq('id', entradaData.produtoId);
+          
+          if (updateError) {
+            console.error('❌ Erro ao atualizar estoque no Supabase:', updateError);
+          } else {
+            console.log('✅ Estoque atualizado no Supabase!');
+          }
         }
       }
     } catch (error) {
