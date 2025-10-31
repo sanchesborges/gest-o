@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { PlusCircle, Package, X, Box } from 'lucide-react';
+import { PlusCircle, Package, X, Box, Trash2 } from 'lucide-react';
 import { Produto, TipoProduto, TamanhoPacote, UserRole } from '../types';
 
 const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -121,20 +121,52 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     );
 };
 
-const ProductCard: React.FC<{ produto: Produto }> = ({ produto }) => (
+const ProductCard: React.FC<{ 
+    produto: Produto;
+    isSelected: boolean;
+    onToggleSelect: (id: string) => void;
+    userRole: UserRole;
+}> = ({ produto, isSelected, onToggleSelect, userRole }) => (
     <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-        <h3 className="text-xl font-bold text-indigo-700">{produto.nome}</h3>
-        <p className="text-sm font-medium text-gray-500 bg-gray-100 inline-block px-2 py-1 rounded-md my-2">{produto.tipo}</p>
-        <div className="text-gray-600 mt-4 space-y-2">
-            <p className="flex items-center"><strong>Preço:</strong> <span className="ml-2 text-lg font-semibold text-green-600">R$ {produto.precoPadrao.toFixed(2)}</span></p>
-            <p><strong>Pacote:</strong> {produto.tamanhoPacote}</p>
-            <p><strong>Estoque Mínimo:</strong> {produto.estoqueMinimo} un.</p>
+        <div className="flex items-start gap-3">
+            {userRole === UserRole.ADMIN && (
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => onToggleSelect(produto.id)}
+                    className="mt-1 w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+                />
+            )}
+            <div className="flex-1">
+                <h3 className="text-xl font-bold text-indigo-700">{produto.nome}</h3>
+                <p className="text-sm font-medium text-gray-500 bg-gray-100 inline-block px-2 py-1 rounded-md my-2">{produto.tipo}</p>
+                <div className="text-gray-600 mt-4 space-y-2">
+                    <p className="flex items-center"><strong>Preço:</strong> <span className="ml-2 text-lg font-semibold text-green-600">R$ {produto.precoPadrao.toFixed(2)}</span></p>
+                    <p><strong>Pacote:</strong> {produto.tamanhoPacote}</p>
+                    <p><strong>Estoque Mínimo:</strong> {produto.estoqueMinimo} un.</p>
+                </div>
+            </div>
         </div>
     </div>
 );
 
-const ProductRow: React.FC<{ produto: Produto }> = ({ produto }) => (
+const ProductRow: React.FC<{ 
+    produto: Produto;
+    isSelected: boolean;
+    onToggleSelect: (id: string) => void;
+    userRole: UserRole;
+}> = ({ produto, isSelected, onToggleSelect, userRole }) => (
     <tr className="border-b border-gray-200 hover:bg-gray-100">
+        {userRole === UserRole.ADMIN && (
+            <td className="py-3 px-6 text-center">
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => onToggleSelect(produto.id)}
+                    className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+                />
+            </td>
+        )}
         <td className="py-3 px-6 text-left">{produto.nome}</td>
         <td className="py-3 px-6 text-left">{produto.tipo}</td>
         <td className="py-3 px-6 text-center">{produto.tamanhoPacote}</td>
@@ -144,28 +176,105 @@ const ProductRow: React.FC<{ produto: Produto }> = ({ produto }) => (
 );
 
 export const Products: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
-  const { produtos } = useAppData();
+  const { produtos, deleteProduto } = useAppData();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleToggleSelect = (produtoId: string) => {
+    setSelectedProducts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(produtoId)) {
+        newSet.delete(produtoId);
+      } else {
+        newSet.add(produtoId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProducts.size === produtos.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(produtos.map(p => p.id)));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    for (const produtoId of selectedProducts) {
+      await deleteProduto(produtoId);
+    }
+    setSelectedProducts(new Set());
+    setShowDeleteConfirm(false);
+  };
 
   return (
     <div className="space-y-6">
       {isModalOpen && <AddProductModal onClose={() => setIsModalOpen(false)} />}
+      
+      {/* Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Confirmar Exclusão</h3>
+            <p className="text-gray-600 mb-6">
+              Tem certeza que deseja excluir {selectedProducts.size} {selectedProducts.size === 1 ? 'produto' : 'produtos'}? 
+              Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteSelected}
+                className="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center"><Box className="mr-3" size={32} /> Cadastro de Produtos</h2>
-        {userRole === UserRole.ADMIN && (
-            <button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors w-full sm:w-auto"
+        <div className="flex flex-col sm:flex-row-reverse gap-2 w-full sm:w-auto">
+          {userRole === UserRole.ADMIN && selectedProducts.size > 0 && (
+            <button 
+              onClick={() => setShowDeleteConfirm(true)} 
+              className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-red-700 transition-colors w-full sm:w-auto"
             >
-            <PlusCircle className="mr-2" size={20} />
-            Novo Produto
+              <Trash2 className="mr-2" size={20} />
+              Excluir ({selectedProducts.size})
             </button>
-        )}
+          )}
+          {userRole === UserRole.ADMIN && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors w-full sm:w-auto"
+            >
+              <PlusCircle className="mr-2" size={20} />
+              Novo Produto
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Mobile View */}
       <div className="grid grid-cols-1 md:hidden gap-6">
-        {produtos.map(produto => <ProductCard key={produto.id} produto={produto} />)}
+        {produtos.map(produto => (
+          <ProductCard 
+            key={produto.id} 
+            produto={produto}
+            isSelected={selectedProducts.has(produto.id)}
+            onToggleSelect={handleToggleSelect}
+            userRole={userRole}
+          />
+        ))}
       </div>
       
       {/* Desktop View */}
@@ -174,6 +283,16 @@ export const Products: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
             <table className="min-w-full bg-white">
                 <thead className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
                 <tr>
+                    {userRole === UserRole.ADMIN && (
+                      <th className="py-3 px-6 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedProducts.size === produtos.length && produtos.length > 0}
+                          onChange={handleSelectAll}
+                          className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+                        />
+                      </th>
+                    )}
                     <th className="py-3 px-6 text-left">Nome</th>
                     <th className="py-3 px-6 text-left">Tipo</th>
                     <th className="py-3 px-6 text-center">Pacote</th>
@@ -182,7 +301,15 @@ export const Products: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                 </tr>
                 </thead>
                 <tbody className="text-gray-600 text-sm font-light">
-                    {produtos.map(p => <ProductRow key={p.id} produto={p} />)}
+                    {produtos.map(p => (
+                      <ProductRow 
+                        key={p.id} 
+                        produto={p}
+                        isSelected={selectedProducts.has(p.id)}
+                        onToggleSelect={handleToggleSelect}
+                        userRole={userRole}
+                      />
+                    ))}
                 </tbody>
             </table>
         </div>
