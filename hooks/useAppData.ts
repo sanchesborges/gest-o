@@ -254,8 +254,19 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         estoqueAtual: 0,
     };
     
+    console.log('📦 Tentando adicionar produto:', newProduto.nome);
+    console.log('   Dados:', {
+      id: newProduto.id,
+      nome: newProduto.nome,
+      tipo: newProduto.tipo,
+      tamanhoPacote: newProduto.tamanhoPacote,
+      precoPadrao: newProduto.precoPadrao,
+      estoqueMinimo: newProduto.estoqueMinimo,
+      estoqueAtual: newProduto.estoqueAtual
+    });
+    
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('produtos')
         .insert([{
           id: newProduto.id,
@@ -265,18 +276,28 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           preco_unitario: newProduto.precoPadrao,
           estoque_minimo: newProduto.estoqueMinimo,
           estoque_atual: newProduto.estoqueAtual
-        }]);
+        }])
+        .select();
       
       if (error) {
-        console.error('Erro ao salvar produto:', error);
+        console.error('❌ ERRO ao salvar produto no Supabase:', error);
+        console.error('   Código:', error.code);
+        console.error('   Mensagem:', error.message);
+        console.error('   Detalhes:', error.details);
+        console.error('   Hint:', error.hint);
+        
         saveToStorage('produtos', [...produtos, newProduto]);
+        alert(`Erro ao salvar produto: ${error.message}\n\nO produto foi salvo localmente, mas pode desaparecer ao recarregar a página.`);
+      } else {
+        console.log('✅ Produto salvo com sucesso no Supabase:', data);
       }
       
       setProdutos(prev => [...prev, newProduto]);
     } catch (error) {
-      console.error('Erro ao adicionar produto:', error);
+      console.error('❌ Exceção ao adicionar produto:', error);
       saveToStorage('produtos', [...produtos, newProduto]);
       setProdutos(prev => [...prev, newProduto]);
+      alert(`Erro inesperado ao salvar produto. Verifique o console para mais detalhes.`);
     }
   };
 
