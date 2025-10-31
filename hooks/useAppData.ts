@@ -92,8 +92,8 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         .select('*');
       if (!produtosError && produtosData) {
         const mappedProdutos = produtosData.map((p: any) => {
-          const preco = parseFloat(p.preco_unitario);
-          console.log(`📦 Produto: ${p.nome}, Preço: ${p.preco_unitario} → ${preco}`);
+          const preco = parseFloat(p.preco_padrao);
+          console.log(`📦 Produto: ${p.nome}, Preço: ${p.preco_padrao} → ${preco}`);
           
           return {
             id: p.id,
@@ -273,7 +273,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           nome: newProduto.nome,
           tipo: newProduto.tipo,
           tamanho_pacote: newProduto.tamanhoPacote,
-          preco_unitario: newProduto.precoPadrao,
+          preco_padrao: newProduto.precoPadrao,
           estoque_minimo: newProduto.estoqueMinimo,
           estoque_atual: newProduto.estoqueAtual
         }])
