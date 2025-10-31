@@ -523,14 +523,22 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     const tempId = `e${Date.now()}`;
     const newEntrada: EntradaEstoque = { ...entradaData, id: tempId };
     
-    console.log('📦 Salvando entrada de estoque localmente...');
+    const produtoAntes = produtos.find(p => p.id === entradaData.produtoId);
+    console.log('📦 Salvando entrada de estoque...');
+    console.log(`   Produto: ${produtoAntes?.nome}`);
+    console.log(`   Estoque ANTES: ${produtoAntes?.estoqueAtual}`);
+    console.log(`   Quantidade a ADICIONAR: ${entradaData.quantidade}`);
+    console.log(`   Estoque DEPOIS deveria ser: ${(produtoAntes?.estoqueAtual || 0) + entradaData.quantidade}`);
     
     // 1. SALVAR LOCALMENTE PRIMEIRO (sempre funciona)
     setProdutos(prevProdutos => {
         const newProdutos = [...prevProdutos];
         const productIndex = newProdutos.findIndex(p => p.id === entradaData.produtoId);
         if (productIndex !== -1) {
+            const estoqueAntes = newProdutos[productIndex].estoqueAtual;
             newProdutos[productIndex].estoqueAtual += entradaData.quantidade;
+            const estoqueDepois = newProdutos[productIndex].estoqueAtual;
+            console.log(`   ✅ Estado atualizado: ${estoqueAntes} + ${entradaData.quantidade} = ${estoqueDepois}`);
         }
         return newProdutos;
     });
@@ -561,10 +569,18 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         console.log('✅ Sincronizado com Supabase!');
         
         // Atualizar estoque no Supabase também
-        const produto = produtos.find(p => p.id === entradaData.produtoId);
-        if (produto) {
-          const novoEstoque = produto.estoqueAtual + entradaData.quantidade;
-          console.log(`📦 Atualizando estoque de ${produto.nome}: ${produto.estoqueAtual} + ${entradaData.quantidade} = ${novoEstoque}`);
+        // Buscar estoque atual do banco (não do estado local que já foi atualizado)
+        const { data: produtoAtual, error: fetchError } = await supabase
+          .from('produtos')
+          .select('nome, estoque_atual')
+          .eq('id', entradaData.produtoId)
+          .single();
+        
+        if (fetchError) {
+          console.error('❌ Erro ao buscar produto:', fetchError);
+        } else if (produtoAtual) {
+          const novoEstoque = produtoAtual.estoque_atual + entradaData.quantidade;
+          console.log(`📦 Atualizando estoque de ${produtoAtual.nome}: ${produtoAtual.estoque_atual} + ${entradaData.quantidade} = ${novoEstoque}`);
           
           const { error: updateError } = await supabase
             .from('produtos')
