@@ -11,6 +11,7 @@ interface AppDataContextType {
   pagamentos: Pagamento[];
   entregadores: Entregador[];
   addProduto: (produto: Omit<Produto, 'id' | 'estoqueAtual'>) => Promise<void>;
+  deleteProduto: (produtoId: string) => Promise<void>;
   addCliente: (cliente: Omit<Cliente, 'id'>) => Promise<void>;
   addPedido: (pedido: Omit<Pedido, 'id'>) => Promise<void>;
   addEntradaEstoque: (entrada: Omit<EntradaEstoque, 'id'>) => Promise<void>;
@@ -275,6 +276,49 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.error('Erro ao adicionar produto:', error);
       saveToStorage('produtos', [...produtos, newProduto]);
       setProdutos(prev => [...prev, newProduto]);
+    }
+  };
+
+  const deleteProduto = async (produtoId: string) => {
+    const produto = produtos.find(p => p.id === produtoId);
+    console.log(`🗑️ Tentando excluir produto: ${produto?.nome} (ID: ${produtoId})`);
+    
+    try {
+      // Delete from Supabase
+      const { data, error } = await supabase
+        .from('produtos')
+        .delete()
+        .eq('id', produtoId)
+        .select();
+      
+      if (error) {
+        console.error('❌ ERRO ao excluir produto do Supabase:', error);
+        console.error('   Código:', error.code);
+        console.error('   Mensagem:', error.message);
+        console.error('   Detalhes:', error.details);
+        console.error('   Hint:', error.hint);
+        
+        // Fallback to localStorage
+        const updatedProdutos = produtos.filter(p => p.id !== produtoId);
+        saveToStorage('produtos', updatedProdutos);
+        
+        // Mostrar alerta para o usuário
+        alert(`Erro ao excluir produto: ${error.message}\n\nO produto foi removido localmente, mas pode reaparecer ao recarregar a página.`);
+      } else {
+        console.log(`✅ Produto excluído com sucesso do Supabase:`, data);
+      }
+      
+      // Update local state
+      setProdutos(prev => prev.filter(p => p.id !== produtoId));
+      
+    } catch (error) {
+      console.error('❌ Exceção ao excluir produto:', error);
+      // Fallback to localStorage
+      const updatedProdutos = produtos.filter(p => p.id !== produtoId);
+      saveToStorage('produtos', updatedProdutos);
+      setProdutos(prev => prev.filter(p => p.id !== produtoId));
+      
+      alert(`Erro inesperado ao excluir produto. Verifique o console para mais detalhes.`);
     }
   };
 
@@ -616,6 +660,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     pagamentos,
     entregadores,
     addProduto,
+    deleteProduto,
     addCliente,
     addPedido,
     addEntradaEstoque,

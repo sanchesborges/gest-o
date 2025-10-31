@@ -8,8 +8,17 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [nome, setNome] = useState('');
     const [tipo, setTipo] = useState<TipoProduto>(TipoProduto.PAO_DE_QUEIJO);
     const [tamanhoPacote, setTamanhoPacote] = useState<TamanhoPacote>(TamanhoPacote.UM_KG);
+    const [gramatura, setGramatura] = useState<string>('25g');
     const [precoPadrao, setPrecoPadrao] = useState(0);
     const [estoqueMinimo, setEstoqueMinimo] = useState(10);
+
+    const handleTamanhoPacoteChange = (novoTamanho: TamanhoPacote) => {
+        setTamanhoPacote(novoTamanho);
+        // Resetar gramatura para o padrão quando mudar o tamanho
+        if (novoTamanho === TamanhoPacote.CINCO_KG) {
+            setGramatura('25g');
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -18,11 +27,16 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             return;
         }
         
-        const finalNome = `${nome} ${tamanhoPacote}`;
+        // Se for 5kg, adicionar a gramatura ao tamanho do pacote
+        const tamanhoFinal = tamanhoPacote === TamanhoPacote.CINCO_KG 
+            ? `${tamanhoPacote} (${gramatura})` 
+            : tamanhoPacote;
+        
+        const finalNome = `${nome} ${tamanhoFinal}`;
         await addProduto({
             nome: finalNome,
             tipo,
-            tamanhoPacote,
+            tamanhoPacote: tamanhoFinal,
             precoPadrao,
             estoqueMinimo,
         });
@@ -55,11 +69,38 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         </div>
                         <div>
                             <label htmlFor="tamanhoPacote" className="block text-sm font-medium text-gray-700">Kilo / Pacote</label>
-                            <select id="tamanhoPacote" value={tamanhoPacote} onChange={e => setTamanhoPacote(e.target.value as TamanhoPacote)} className="w-full p-2 mt-1 border border-gray-300 rounded-md">
+                            <select 
+                                id="tamanhoPacote" 
+                                value={tamanhoPacote} 
+                                onChange={e => handleTamanhoPacoteChange(e.target.value as TamanhoPacote)} 
+                                className="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
                                 {Object.values(TamanhoPacote).map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                         </div>
                     </div>
+                    
+                    {/* Campo de Gramatura - aparece apenas quando 5kg é selecionado */}
+                    {tamanhoPacote === TamanhoPacote.CINCO_KG && (
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <label htmlFor="gramatura" className="block text-sm font-medium text-gray-700 mb-2">
+                                Gramatura (para pacote de 5kg)
+                            </label>
+                            <select 
+                                id="gramatura" 
+                                value={gramatura} 
+                                onChange={e => setGramatura(e.target.value)} 
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                                <option value="25g">25 Gramas</option>
+                                <option value="30g">30 Gramas</option>
+                                <option value="40g">40 Gramas</option>
+                            </select>
+                            <p className="text-xs text-gray-500 mt-2">
+                                Selecione o peso individual de cada unidade no pacote de 5kg
+                            </p>
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="precoPadrao" className="block text-sm font-medium text-gray-700">Valor (R$)</label>

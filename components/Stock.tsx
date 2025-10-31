@@ -6,15 +6,27 @@ import { Link } from 'react-router-dom';
 import { OrderConfirmationModal } from './OrderConfirmationModal';
 
 // Card component for mobile view
-const StockCard: React.FC<{ produto: Produto }> = ({ produto }) => {
+const StockCard: React.FC<{ 
+  produto: Produto; 
+  isSelected: boolean; 
+  onToggleSelect: (id: string) => void;
+}> = ({ produto, isSelected, onToggleSelect }) => {
   const isLowStock = produto.estoqueAtual < produto.estoqueMinimo;
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-5 mb-4 transform hover:scale-105 transition-transform duration-300">
       <div className="flex justify-between items-start">
-        <div>
-          <h3 className="font-bold text-lg text-gray-800">{produto.nome}</h3>
-          <p className="text-sm text-gray-500">{produto.tamanhoPacote}</p>
+        <div className="flex items-start gap-3 flex-1">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelect(produto.id)}
+            className="mt-1 w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+          />
+          <div>
+            <h3 className="font-bold text-lg text-gray-800">{produto.nome}</h3>
+            <p className="text-sm text-gray-500">{produto.tamanhoPacote}</p>
+          </div>
         </div>
         <span className={`py-1 px-3 rounded-full text-xs font-bold ${isLowStock ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>
           {isLowStock ? 'BAIXO' : 'OK'}
@@ -37,10 +49,22 @@ const StockCard: React.FC<{ produto: Produto }> = ({ produto }) => {
 };
 
 // Table row for desktop view
-const StockRow: React.FC<{ produto: Produto }> = ({ produto }) => {
+const StockRow: React.FC<{ 
+  produto: Produto; 
+  isSelected: boolean; 
+  onToggleSelect: (id: string) => void;
+}> = ({ produto, isSelected, onToggleSelect }) => {
   const isLowStock = produto.estoqueAtual < produto.estoqueMinimo;
   return (
     <tr className="border-b border-gray-200 hover:bg-gray-100">
+      <td className="py-3 px-6 text-center">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggleSelect(produto.id)}
+          className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+        />
+      </td>
       <td className="py-3 px-6 text-left">{produto.nome}</td>
       <td className="py-3 px-6 text-center">{produto.tamanhoPacote}</td>
       <td className={`py-3 px-6 text-center font-bold text-lg ${isLowStock ? 'text-red-600' : 'text-gray-800'}`}>{produto.estoqueAtual}</td>
@@ -354,15 +378,82 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 }
 
 export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
-  const { produtos } = useAppData();
+  const { produtos, deleteProduto } = useAppData();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleToggleSelect = (produtoId: string) => {
+    setSelectedProducts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(produtoId)) {
+        newSet.delete(produtoId);
+      } else {
+        newSet.add(produtoId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProducts.size === produtos.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(produtos.map(p => p.id)));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    for (const produtoId of selectedProducts) {
+      await deleteProduto(produtoId);
+    }
+    setSelectedProducts(new Set());
+    setShowDeleteConfirm(false);
+  };
 
   return (
     <div className="space-y-6 p-6 pt-8">
         {isModalOpen && <AddStockModal onClose={() => setIsModalOpen(false)} />}
+        
+        {/* Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={() => setShowDeleteConfirm(false)}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Confirmar Exclusão</h3>
+              <p className="text-gray-600 mb-6">
+                Tem certeza que deseja excluir {selectedProducts.size} {selectedProducts.size === 1 ? 'produto' : 'produtos'}? 
+                Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  className="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Excluir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <h2 className="text-3xl font-bold text-gray-800 flex items-center"><Package className="mr-3" size={32} /> Controle de Estoque</h2>
             <div className="flex flex-col sm:flex-row-reverse gap-2 w-full sm:w-auto">
+                {userRole === UserRole.ADMIN && selectedProducts.size > 0 && (
+                    <button 
+                        onClick={() => setShowDeleteConfirm(true)} 
+                        className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-red-700 transition-colors w-full sm:w-auto"
+                    >
+                        <Trash2 className="mr-2" size={20} />
+                        Excluir ({selectedProducts.size})
+                    </button>
+                )}
                 {userRole === UserRole.ADMIN && (
                     <button 
                         onClick={() => setIsModalOpen(true)} 
@@ -384,7 +475,14 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
         
         {/* Mobile View - Cards */}
         <div className="md:hidden">
-            {produtos.map(p => <StockCard key={p.id} produto={p} />)}
+            {produtos.map(p => (
+              <StockCard 
+                key={p.id} 
+                produto={p} 
+                isSelected={selectedProducts.has(p.id)}
+                onToggleSelect={handleToggleSelect}
+              />
+            ))}
         </div>
 
         {/* Desktop View - Table */}
@@ -393,6 +491,14 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
                 <table className="min-w-full bg-white">
                     <thead className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
                     <tr>
+                        <th className="py-3 px-6 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.size === produtos.length && produtos.length > 0}
+                            onChange={handleSelectAll}
+                            className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+                          />
+                        </th>
                         <th className="py-3 px-6 text-left">Produto</th>
                         <th className="py-3 px-6 text-center">Pacote</th>
                         <th className="py-3 px-6 text-center">Estoque Atual</th>
@@ -401,7 +507,14 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
                     </tr>
                     </thead>
                     <tbody className="text-gray-600 text-sm font-light">
-                    {produtos.map(p => <StockRow key={p.id} produto={p} />)}
+                    {produtos.map(p => (
+                      <StockRow 
+                        key={p.id} 
+                        produto={p} 
+                        isSelected={selectedProducts.has(p.id)}
+                        onToggleSelect={handleToggleSelect}
+                      />
+                    ))}
                     </tbody>
                 </table>
             </div>
