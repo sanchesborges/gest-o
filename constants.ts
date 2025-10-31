@@ -12,7 +12,7 @@ export const MOCK_PRODUTOS: Produto[] = [
   { id: 'p9', nome: 'Pão de Queijo', tipo: TipoProduto.PAO_DE_QUEIJO, tamanhoPacote: '30g', precoPadrao: 0.60, estoqueMinimo: 100, estoqueAtual: 400 },
   { id: 'p10', nome: 'Pão de Queijo', tipo: TipoProduto.PAO_DE_QUEIJO, tamanhoPacote: '40g', precoPadrao: 0.80, estoqueMinimo: 80, estoqueAtual: 300 },
   { id: 'p11', nome: 'Pão de Queijo', tipo: TipoProduto.PAO_DE_QUEIJO, tamanhoPacote: '100g', precoPadrao: 2.00, estoqueMinimo: 50, estoqueAtual: 200 },
-  { id: 'p12', nome: 'Rapadura', tipo: TipoProduto.RAPADURA, tamanhoPacote: TamanhoPacote.UM_KG, precoPadrao: 14.00, estoqueMinimo: 15, estoqueAtual: 60 },
+  { id: 'p12', nome: 'Rápido', tipo: TipoProduto.RAPIDO, tamanhoPacote: TamanhoPacote.UM_KG, precoPadrao: 14.00, estoqueMinimo: 15, estoqueAtual: 60 },
 ];
 
 export const MOCK_CLIENTES: Cliente[] = [

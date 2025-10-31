@@ -5,7 +5,7 @@ export enum TipoProduto {
   BISCOITO_POLVILHO = 'Biscoito Polvilho',
   BISCOITO_GOMA = 'Biscoito Goma',
   FUBA = 'Fubá',
-  RAPADURA = 'Rapadura',
+  RAPIDO = 'Rápido',
 }
 
 export enum TamanhoPacote {
