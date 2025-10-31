@@ -103,6 +103,9 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [registeredFornecedor, setRegisteredFornecedor] = useState('');
 
     const produtoSelecionado = produtos.find(p => p.id === produtoId);
+    
+    // Log para debug
+    console.log('📦 Produto selecionado:', produtoSelecionado?.nome, 'Estoque:', produtoSelecionado?.estoqueAtual);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
