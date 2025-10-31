@@ -14,7 +14,56 @@ O banco de dados tem uma **constraint** (restrição) ou **ENUM** que define qua
 2. **ENUM Type**: Tipo enumerado com valores fixos
 3. **Foreign Key**: Referência a outra tabela
 
-## ✅ Solução
+## ✅ Solução Confirmada
+
+O erro mostra que existe um **ENUM** chamado `tipo_produto` e "Rápido" não está incluído.
+
+### Passo 1: Adicionar "Rápido" ao ENUM
+
+Execute no **Supabase SQL Editor**:
+
+```sql
+-- Adicionar "Rápido" ao enum
+ALTER TYPE tipo_produto ADD VALUE 'Rápido';
+
+-- Atualizar cache
+NOTIFY pgrst, 'reload schema';
+```
+
+**Pronto!** Isso resolve o problema.
+
+### Passo 2: Testar
+
+```sql
+-- Testar inserção
+INSERT INTO produtos (
+    id, nome, tipo, tamanho_pacote, 
+    preco_padrao, estoque_minimo, estoque_atual
+) VALUES (
+    gen_random_uuid(),
+    'Teste Rápido',
+    'Rápido',
+    '1kg',
+    14.00,
+    10,
+    0
+);
+
+-- Verificar
+SELECT * FROM produtos WHERE tipo = 'Rápido';
+```
+
+### Passo 3: Testar na Aplicação
+
+1. Vá em **Cadastro de Produtos**
+2. Clique em **Novo Produto**
+3. Selecione tipo **"Rápido"**
+4. Preencha e salve
+5. ✅ Deve salvar com sucesso!
+
+---
+
+## 🔍 Diagnóstico Completo (Opcional)
 
 ### Passo 1: Identificar o Problema
 
