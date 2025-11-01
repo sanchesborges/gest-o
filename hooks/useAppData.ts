@@ -85,7 +85,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const loadAllData = async () => {
     try {
       setIsLoading(true);
-      
+
       // Load produtos
       const { data: produtosData, error: produtosError } = await supabase
         .from('produtos')
@@ -94,7 +94,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         const mappedProdutos = produtosData.map((p: any) => {
           const preco = parseFloat(p.preco_padrao);
           console.log(`📦 Produto: ${p.nome}, Preço: ${p.preco_padrao} → ${preco}`);
-          
+
           return {
             id: p.id,
             nome: p.nome,
@@ -258,13 +258,13 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addProduto = async (produtoData: Omit<Produto, 'id' | 'estoqueAtual'>) => {
     // Gerar UUID válido
     const uuid = crypto.randomUUID();
-    
+
     const newProduto: Produto = {
-        ...produtoData,
-        id: uuid,
-        estoqueAtual: 0,
+      ...produtoData,
+      id: uuid,
+      estoqueAtual: 0,
     };
-    
+
     console.log('📦 Tentando adicionar produto:', newProduto.nome);
     console.log('   Dados:', {
       id: newProduto.id,
@@ -275,7 +275,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       estoqueMinimo: newProduto.estoqueMinimo,
       estoqueAtual: newProduto.estoqueAtual
     });
-    
+
     try {
       const { data, error } = await supabase
         .from('produtos')
@@ -289,20 +289,20 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           estoque_atual: newProduto.estoqueAtual
         }])
         .select();
-      
+
       if (error) {
         console.error('❌ ERRO ao salvar produto no Supabase:', error);
         console.error('   Código:', error.code);
         console.error('   Mensagem:', error.message);
         console.error('   Detalhes:', error.details);
         console.error('   Hint:', error.hint);
-        
+
         saveToStorage('produtos', [...produtos, newProduto]);
         alert(`Erro ao salvar produto: ${error.message}\n\nO produto foi salvo localmente, mas pode desaparecer ao recarregar a página.`);
       } else {
         console.log('✅ Produto salvo com sucesso no Supabase:', data);
       }
-      
+
       setProdutos(prev => [...prev, newProduto]);
     } catch (error) {
       console.error('❌ Exceção ao adicionar produto:', error);
@@ -315,7 +315,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const deleteProduto = async (produtoId: string) => {
     const produto = produtos.find(p => p.id === produtoId);
     console.log(`🗑️ Tentando excluir produto: ${produto?.nome} (ID: ${produtoId})`);
-    
+
     try {
       // Delete from Supabase
       const { data, error } = await supabase
@@ -323,44 +323,44 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         .delete()
         .eq('id', produtoId)
         .select();
-      
+
       if (error) {
         console.error('❌ ERRO ao excluir produto do Supabase:', error);
         console.error('   Código:', error.code);
         console.error('   Mensagem:', error.message);
         console.error('   Detalhes:', error.details);
         console.error('   Hint:', error.hint);
-        
+
         // Fallback to localStorage
         const updatedProdutos = produtos.filter(p => p.id !== produtoId);
         saveToStorage('produtos', updatedProdutos);
-        
+
         // Mostrar alerta para o usuário
         alert(`Erro ao excluir produto: ${error.message}\n\nO produto foi removido localmente, mas pode reaparecer ao recarregar a página.`);
       } else {
         console.log(`✅ Produto excluído com sucesso do Supabase:`, data);
       }
-      
+
       // Update local state
       setProdutos(prev => prev.filter(p => p.id !== produtoId));
-      
+
     } catch (error) {
       console.error('❌ Exceção ao excluir produto:', error);
       // Fallback to localStorage
       const updatedProdutos = produtos.filter(p => p.id !== produtoId);
       saveToStorage('produtos', updatedProdutos);
       setProdutos(prev => prev.filter(p => p.id !== produtoId));
-      
+
       alert(`Erro inesperado ao excluir produto. Verifique o console para mais detalhes.`);
     }
   };
 
   const addCliente = async (clienteData: Omit<Cliente, 'id'>) => {
     const newCliente: Cliente = {
-        ...clienteData,
-        id: crypto.randomUUID(),
+      ...clienteData,
+      id: crypto.randomUUID(),
     };
-    
+
     try {
       const { error } = await supabase
         .from('clientes')
@@ -372,12 +372,12 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           telefone: newCliente.telefone,
           condicao_pagamento: newCliente.condicaoPagamento
         }]);
-      
+
       if (error) {
         console.error('Erro ao salvar cliente:', error);
         saveToStorage('clientes', [...clientes, newCliente]);
       }
-      
+
       setClientes(prev => [...prev, newCliente]);
     } catch (error) {
       console.error('Erro ao adicionar cliente:', error);
@@ -385,21 +385,21 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       setClientes(prev => [...prev, newCliente]);
     }
   };
-  
+
   const addPedido = async (pedidoData: Omit<Pedido, 'id'>) => {
     // Gerar UUID válido
     const uuid = crypto.randomUUID();
-    
+
     const newPedido: Pedido = {
-        ...pedidoData,
-        id: uuid
+      ...pedidoData,
+      id: uuid
     };
-    
+
     console.log('🛒 Tentando salvar pedido:', newPedido.id);
     console.log('   Cliente:', newPedido.clienteId);
     console.log('   Valor Total:', newPedido.valorTotal);
     console.log('   Itens:', newPedido.itens.length);
-    
+
     try {
       // Insert pedido
       const { data: pedidoData, error: pedidoError } = await supabase
@@ -416,22 +416,22 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           assinatura: newPedido.assinatura
         }])
         .select();
-      
+
       if (pedidoError) {
         console.error('❌ ERRO ao salvar pedido no Supabase:', pedidoError);
         console.error('   Código:', pedidoError.code);
         console.error('   Mensagem:', pedidoError.message);
         console.error('   Detalhes:', pedidoError.details);
         console.error('   Hint:', pedidoError.hint);
-        
+
         alert(`Erro ao salvar pedido: ${pedidoError.message}\n\nO pedido foi salvo localmente, mas pode desaparecer ao recarregar a página.`);
         saveToStorage('pedidos', [...pedidos, newPedido]);
         setPedidos(prev => [...prev, newPedido]);
         return;
       }
-      
+
       console.log('✅ Pedido salvo no Supabase:', pedidoData);
-      
+
       // Validar estoque ANTES de salvar
       console.log('📦 Validando estoque dos produtos...');
       for (const item of newPedido.itens) {
@@ -439,43 +439,43 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (produto) {
           const novoEstoque = produto.estoqueAtual - item.quantidade;
           console.log(`   ${produto.nome}: ${produto.estoqueAtual} - ${item.quantidade} = ${novoEstoque}`);
-          
+
           if (novoEstoque < 0) {
             console.error(`❌ Estoque insuficiente para ${produto.nome}`);
             alert(`Estoque insuficiente!\n\nProduto: ${produto.nome}\nEstoque atual: ${produto.estoqueAtual}\nQuantidade solicitada: ${item.quantidade}\n\nPor favor, ajuste a quantidade ou adicione estoque.`);
-            
+
             // Deletar o pedido que foi criado
             await supabase.from('pedidos').delete().eq('id', newPedido.id);
             return;
           }
         }
       }
-      
+
       // Update stock in Supabase ANTES de inserir itens
       console.log('📦 Atualizando estoque dos produtos...');
       for (const item of newPedido.itens) {
         const produto = produtos.find(p => p.id === item.produtoId);
         if (produto) {
           const novoEstoque = produto.estoqueAtual - item.quantidade;
-          
+
           const { error: estoqueError } = await supabase
             .from('produtos')
             .update({ estoque_atual: novoEstoque })
             .eq('id', item.produtoId);
-          
+
           if (estoqueError) {
             console.error(`❌ Erro ao atualizar estoque de ${produto.nome}:`, estoqueError);
             alert(`Erro ao atualizar estoque: ${estoqueError.message}`);
-            
+
             // Deletar o pedido que foi criado
             await supabase.from('pedidos').delete().eq('id', newPedido.id);
             return;
           }
         }
       }
-      
+
       console.log('✅ Estoque atualizado!');
-      
+
       // Insert itens DEPOIS de atualizar estoque
       const itensToInsert = newPedido.itens.map((item) => ({
         id: crypto.randomUUID(), // Gerar UUID válido para cada item
@@ -484,14 +484,14 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         quantidade: item.quantidade,
         preco_unitario: item.precoUnitario
       }));
-      
+
       console.log('📦 Salvando itens do pedido:', itensToInsert.length);
-      
+
       const { data: itensData, error: itensError } = await supabase
         .from('itens_pedido')
         .insert(itensToInsert)
         .select();
-      
+
       if (itensError) {
         console.error('❌ ERRO ao salvar itens do pedido:', itensError);
         console.error('   Código:', itensError.code);
@@ -499,11 +499,11 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         alert(`Erro ao salvar itens do pedido: ${itensError.message}`);
         return;
       }
-      
+
       console.log('✅ Itens salvos no Supabase:', itensData);
-      
+
       console.log('✅ Estoque atualizado!');
-      
+
       // Update local state
       setProdutos(prevProdutos => {
         const newProdutos = [...prevProdutos];
@@ -515,10 +515,10 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         });
         return newProdutos;
       });
-      
+
       setPedidos(prev => [...prev, newPedido]);
       console.log('✅ Pedido adicionado com sucesso!');
-      
+
     } catch (error) {
       console.error('❌ Exceção ao adicionar pedido:', error);
       alert(`Erro inesperado ao salvar pedido: ${error}\n\nO pedido foi salvo localmente, mas pode desaparecer ao recarregar a página.`);
@@ -531,7 +531,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const deletePedido = async (pedidoId: string) => {
     const pedido = pedidos.find(p => p.id === pedidoId);
     console.log(`🗑️ Tentando excluir pedido: ${pedidoId}`);
-    
+
     try {
       // Delete from Supabase (itens_pedido será deletado automaticamente se CASCADE estiver configurado)
       const { data, error } = await supabase
@@ -539,22 +539,22 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         .delete()
         .eq('id', pedidoId)
         .select();
-      
+
       if (error) {
         console.error('❌ ERRO ao excluir pedido do Supabase:', error);
         console.error('   Código:', error.code);
         console.error('   Mensagem:', error.message);
         console.error('   Detalhes:', error.details);
         console.error('   Hint:', error.hint);
-        
+
         // Fallback to localStorage
         const updatedPedidos = pedidos.filter(p => p.id !== pedidoId);
         saveToStorage('pedidos', updatedPedidos);
-        
+
         alert(`Erro ao excluir pedido: ${error.message}\n\nO pedido foi removido localmente, mas pode reaparecer ao recarregar a página.`);
       } else {
         console.log(`✅ Pedido excluído com sucesso do Supabase:`, data);
-        
+
         // Se o pedido foi excluído, restaurar o estoque dos produtos
         if (pedido && pedido.status === StatusPedido.PENDENTE) {
           console.log('📦 Restaurando estoque dos produtos...');
@@ -566,11 +566,11 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
                 .from('produtos')
                 .update({ estoque_atual: novoEstoque })
                 .eq('id', item.produtoId);
-              
+
               console.log(`  ✅ Estoque de ${produto.nome} restaurado: +${item.quantidade}`);
             }
           }
-          
+
           // Atualizar estado local dos produtos
           setProdutos(prevProdutos => {
             const newProdutos = [...prevProdutos];
@@ -584,17 +584,17 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           });
         }
       }
-      
+
       // Update local state
       setPedidos(prev => prev.filter(p => p.id !== pedidoId));
-      
+
     } catch (error) {
       console.error('❌ Exceção ao excluir pedido:', error);
       // Fallback to localStorage
       const updatedPedidos = pedidos.filter(p => p.id !== pedidoId);
       saveToStorage('pedidos', updatedPedidos);
       setPedidos(prev => prev.filter(p => p.id !== pedidoId));
-      
+
       alert(`Erro inesperado ao excluir pedido. Verifique o console para mais detalhes.`);
     }
   };
@@ -602,141 +602,128 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addEntradaEstoque = async (entradaData: Omit<EntradaEstoque, 'id'>) => {
     const uuid = crypto.randomUUID();
     const newEntrada: EntradaEstoque = { ...entradaData, id: uuid };
-    
-    const produtoAntes = produtos.find(p => p.id === entradaData.produtoId);
-    console.log('📦 Salvando entrada de estoque...');
-    console.log(`   Produto: ${produtoAntes?.nome}`);
-    console.log(`   Estoque ANTES: ${produtoAntes?.estoqueAtual}`);
-    console.log(`   Quantidade a ADICIONAR: ${entradaData.quantidade}`);
-    console.log(`   Estoque DEPOIS deveria ser: ${(produtoAntes?.estoqueAtual || 0) + entradaData.quantidade}`);
-    
-    // 1. SALVAR LOCALMENTE PRIMEIRO (sempre funciona)
-    setProdutos(prevProdutos => {
-        const newProdutos = [...prevProdutos];
-        const productIndex = newProdutos.findIndex(p => p.id === entradaData.produtoId);
-        if (productIndex !== -1) {
-            const estoqueAntes = newProdutos[productIndex].estoqueAtual;
-            newProdutos[productIndex].estoqueAtual += entradaData.quantidade;
-            const estoqueDepois = newProdutos[productIndex].estoqueAtual;
-            console.log(`   ✅ Estado atualizado: ${estoqueAntes} + ${entradaData.quantidade} = ${estoqueDepois}`);
-        }
-        return newProdutos;
-    });
-    
-    setEntradasEstoque(prev => [...prev, newEntrada]);
-    saveToStorage('entradasEstoque', [...entradasEstoque, newEntrada]);
-    
-    console.log('✅ Entrada salva localmente!');
-    
-    // 2. TENTAR SINCRONIZAR COM SUPABASE (em background, sem bloquear)
+
+    console.log('📦 [addEntradaEstoque] Iniciando...');
+    console.log('   Produto ID:', entradaData.produtoId);
+    console.log('   Quantidade:', entradaData.quantidade);
+
     try {
-      // Primeiro, buscar o estoque atual do banco ANTES de atualizar
+      // 1. Buscar estoque atual do banco (com lock para evitar race conditions)
       const { data: produtoAtual, error: fetchError } = await supabase
         .from('produtos')
-        .select('nome, estoque_atual')
+        .select('estoque_atual, nome')
         .eq('id', entradaData.produtoId)
         .single();
-      
+
       if (fetchError) {
         console.error('❌ Erro ao buscar produto:', fetchError);
-        console.log('💾 Entrada salva apenas localmente');
-        return;
+        throw fetchError;
       }
-      
-      if (!produtoAtual) {
-        console.error('❌ Produto não encontrado no banco');
-        return;
+
+      console.log(`   Estoque atual no banco: ${produtoAtual.estoque_atual}`);
+
+      // 2. Calcular novo estoque
+      const novoEstoque = produtoAtual.estoque_atual + entradaData.quantidade;
+      console.log(`   Novo estoque calculado: ${novoEstoque} (${produtoAtual.estoque_atual} + ${entradaData.quantidade})`);
+
+      // 3. Salvar entrada PRIMEIRO (para ter registro)
+      const { error: insertError } = await supabase
+        .from('entradas_estoque')
+        .insert([{
+          id: newEntrada.id,
+          produto_id: entradaData.produtoId,
+          quantidade: entradaData.quantidade,
+          fornecedor: entradaData.fornecedor,
+          data_recebimento: entradaData.dataRecebimento.toISOString(),
+          data_validade: entradaData.dataValidade?.toISOString()
+        }]);
+
+      if (insertError) {
+        console.error('❌ Erro ao inserir entrada:', insertError);
+        throw insertError;
       }
-      
-      const estoqueAntesBanco = produtoAtual.estoque_atual;
-      const novoEstoque = estoqueAntesBanco + entradaData.quantidade;
-      console.log(`📦 Atualizando estoque de ${produtoAtual.nome}: ${estoqueAntesBanco} + ${entradaData.quantidade} = ${novoEstoque}`);
-      
-      // Atualizar estoque no banco
+
+      console.log('   ✅ Entrada salva no banco');
+
+      // 4. Atualizar estoque do produto
       const { error: updateError } = await supabase
         .from('produtos')
         .update({ estoque_atual: novoEstoque })
         .eq('id', entradaData.produtoId);
-      
+
       if (updateError) {
-        console.error('❌ Erro ao atualizar estoque no Supabase:', updateError);
-        console.log('💾 Entrada salva apenas localmente');
-        return;
+        console.error('❌ Erro ao atualizar estoque:', updateError);
+        // Tentar reverter a entrada
+        await supabase.from('entradas_estoque').delete().eq('id', newEntrada.id);
+        throw updateError;
       }
-      
-      console.log('✅ Estoque atualizado no Supabase!');
-      
-      // Salvar entrada de estoque
-      const dataToInsert = {
-        id: newEntrada.id,
-        produto_id: entradaData.produtoId,
-        quantidade: entradaData.quantidade,
-        fornecedor: entradaData.fornecedor,
-        data_recebimento: entradaData.dataRecebimento.toISOString(),
-        data_validade: entradaData.dataValidade?.toISOString()
-      };
-      
-      const { error: insertError } = await supabase
-        .from('entradas_estoque')
-        .insert([dataToInsert]);
-      
-      if (insertError) {
-        console.warn('⚠️ Erro ao salvar entrada no Supabase:', insertError.message);
-        console.log('💾 Entrada mantida apenas localmente');
-      } else {
-        console.log('✅ Entrada salva no Supabase!');
-      }
-      
+
+      console.log(`   ✅ Estoque atualizado no banco: ${novoEstoque}`);
+
+      // 5. Atualizar estado local
+      setProdutos(prevProdutos =>
+        prevProdutos.map(p =>
+          p.id === entradaData.produtoId
+            ? { ...p, estoqueAtual: novoEstoque }
+            : p
+        )
+      );
+
+      setEntradasEstoque(prev => [...prev, newEntrada]);
+
+      console.log('✅ [addEntradaEstoque] Concluído com sucesso!');
+
     } catch (error) {
-      console.warn('⚠️ Erro ao sincronizar com Supabase:', error);
-      console.log('💾 Dados mantidos apenas localmente');
+      console.error('❌ [addEntradaEstoque] Erro:', error);
+      alert('Erro ao adicionar entrada de estoque. Verifique sua conexão.');
+      throw error;
     }
   };
-  
+
   const addPagamento = async (pedidoId: string, valor: number, metodo: MetodoPagamento) => {
-      const newPagamento: Pagamento = {
-          id: crypto.randomUUID(),
-          pedidoId,
-          valor,
-          metodo,
-          data: new Date()
-      };
-      
-      try {
-        // Insert pagamento
-        const { error: pagamentoError } = await supabase
-          .from('pagamentos')
-          .insert([{
-            id: newPagamento.id,
-            pedido_id: newPagamento.pedidoId,
-            valor: newPagamento.valor,
-            metodo: newPagamento.metodo,
-            data: newPagamento.data.toISOString()
-          }]);
-        
-        if (pagamentoError) {
-          console.error('Erro ao salvar pagamento:', pagamentoError);
-        }
-        
-        // Update pedido status
-        const { error: pedidoError } = await supabase
-          .from('pedidos')
-          .update({ status_pagamento: StatusPagamento.PAGO })
-          .eq('id', pedidoId);
-        
-        if (pedidoError) {
-          console.error('Erro ao atualizar status do pedido:', pedidoError);
-        }
-        
-        setPagamentos(prev => [...prev, newPagamento]);
-        setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, statusPagamento: StatusPagamento.PAGO } : p));
-        
-      } catch (error) {
-        console.error('Erro ao adicionar pagamento:', error);
-        saveToStorage('pagamentos', [...pagamentos, newPagamento]);
-        setPagamentos(prev => [...prev, newPagamento]);
-        setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, statusPagamento: StatusPagamento.PAGO } : p));
+    const newPagamento: Pagamento = {
+      id: crypto.randomUUID(),
+      pedidoId,
+      valor,
+      metodo,
+      data: new Date()
+    };
+
+    try {
+      // Insert pagamento
+      const { error: pagamentoError } = await supabase
+        .from('pagamentos')
+        .insert([{
+          id: newPagamento.id,
+          pedido_id: newPagamento.pedidoId,
+          valor: newPagamento.valor,
+          metodo: newPagamento.metodo,
+          data: newPagamento.data.toISOString()
+        }]);
+
+      if (pagamentoError) {
+        console.error('Erro ao salvar pagamento:', pagamentoError);
       }
+
+      // Update pedido status
+      const { error: pedidoError } = await supabase
+        .from('pedidos')
+        .update({ status_pagamento: StatusPagamento.PAGO })
+        .eq('id', pedidoId);
+
+      if (pedidoError) {
+        console.error('Erro ao atualizar status do pedido:', pedidoError);
+      }
+
+      setPagamentos(prev => [...prev, newPagamento]);
+      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, statusPagamento: StatusPagamento.PAGO } : p));
+
+    } catch (error) {
+      console.error('Erro ao adicionar pagamento:', error);
+      saveToStorage('pagamentos', [...pagamentos, newPagamento]);
+      setPagamentos(prev => [...prev, newPagamento]);
+      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, statusPagamento: StatusPagamento.PAGO } : p));
+    }
   };
 
   const updatePedidoStatus = async (pedidoId: string, status: StatusPedido, assinatura?: string) => {
@@ -745,48 +732,48 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (assinatura) {
         updateData.assinatura = assinatura;
       }
-      
+
       const { error } = await supabase
         .from('pedidos')
         .update(updateData)
         .eq('id', pedidoId);
-      
+
       if (error) {
         console.error('Erro ao atualizar status do pedido:', error);
       }
-      
+
       setPedidos(prev => prev.map(p => {
-          if (p.id === pedidoId) {
-              const updatedPedido: Pedido = { ...p, status };
-              if(assinatura) {
-                  updatedPedido.assinatura = assinatura;
-              }
-              return updatedPedido;
+        if (p.id === pedidoId) {
+          const updatedPedido: Pedido = { ...p, status };
+          if (assinatura) {
+            updatedPedido.assinatura = assinatura;
           }
-          return p;
+          return updatedPedido;
+        }
+        return p;
       }));
-      
+
     } catch (error) {
       console.error('Erro ao atualizar pedido:', error);
       setPedidos(prev => prev.map(p => {
-          if (p.id === pedidoId) {
-              const updatedPedido: Pedido = { ...p, status };
-              if(assinatura) {
-                  updatedPedido.assinatura = assinatura;
-              }
-              return updatedPedido;
+        if (p.id === pedidoId) {
+          const updatedPedido: Pedido = { ...p, status };
+          if (assinatura) {
+            updatedPedido.assinatura = assinatura;
           }
-          return p;
+          return updatedPedido;
+        }
+        return p;
       }));
     }
   };
 
   const addEntregador = async (entregadorData: Omit<Entregador, 'id'>) => {
     const newEntregador: Entregador = {
-        ...entregadorData,
-        id: crypto.randomUUID(),
+      ...entregadorData,
+      id: crypto.randomUUID(),
     };
-    
+
     try {
       // Save to Supabase (mapear avatarUrl para avatar_url)
       const { error } = await supabase
@@ -797,7 +784,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           telefone: newEntregador.telefone,
           avatar_url: newEntregador.avatarUrl
         }]);
-      
+
       if (error) {
         console.error('Erro ao salvar entregador no Supabase:', error);
         console.error('Detalhes do erro:', JSON.stringify(error, null, 2));
@@ -806,7 +793,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       } else {
         console.log('✅ Entregador salvo com sucesso no Supabase!');
       }
-      
+
       setEntregadores(prev => [...prev, newEntregador]);
     } catch (error) {
       console.error('Erro ao adicionar entregador:', error);
@@ -823,17 +810,17 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         .from('entregadores')
         .delete()
         .eq('id', entregadorId);
-      
+
       if (error) {
         console.error('Erro ao excluir entregador do Supabase:', error);
         // Fallback to localStorage
         const updatedEntregadores = entregadores.filter(e => e.id !== entregadorId);
         saveToStorage('entregadores', updatedEntregadores);
       }
-      
+
       // Update local state
       setEntregadores(prev => prev.filter(e => e.id !== entregadorId));
-      
+
     } catch (error) {
       console.error('Erro ao excluir entregador:', error);
       // Fallback to localStorage
@@ -849,19 +836,19 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         .from('pedidos')
         .update({ entregador_id: entregadorId })
         .eq('id', pedidoId);
-      
+
       if (error) {
         console.error('Erro ao atribuir entregador:', error);
       }
-      
-      setPedidos(prev => prev.map(p => 
-          p.id === pedidoId ? { ...p, entregadorId } : p
+
+      setPedidos(prev => prev.map(p =>
+        p.id === pedidoId ? { ...p, entregadorId } : p
       ));
-      
+
     } catch (error) {
       console.error('Erro ao atribuir entregador:', error);
-      setPedidos(prev => prev.map(p => 
-          p.id === pedidoId ? { ...p, entregadorId } : p
+      setPedidos(prev => prev.map(p =>
+        p.id === pedidoId ? { ...p, entregadorId } : p
       ));
     }
   };

@@ -101,8 +101,12 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [registeredItems, setRegisteredItems] = useState<ItemEntrada[]>([]);
     const [registeredDate, setRegisteredDate] = useState<Date>(new Date());
     const [registeredFornecedor, setRegisteredFornecedor] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const produtoSelecionado = produtos.find(p => p.id === produtoId);
+    // Buscar produto selecionado sempre que produtos ou produtoId mudar
+    const produtoSelecionado = React.useMemo(() => {
+        return produtos.find(p => p.id === produtoId);
+    }, [produtos, produtoId]);
     
     // Log para debug
     console.log('📦 Produto selecionado:', produtoSelecionado?.nome, 'Estoque:', produtoSelecionado?.estoqueAtual);
@@ -110,30 +114,55 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        // Preparar itens para registro
-        const itemsToRegister = itensEntrada.length > 0 ? itensEntrada : [{
-            id: Date.now().toString(),
-            produtoId,
-            quantidade
-        }];
-        
-        const registrationDate = new Date();
-        
-        // Registrar no sistema
-        for (const item of itemsToRegister) {
-            await addEntradaEstoque({
-                produtoId: item.produtoId,
-                quantidade: item.quantidade,
-                fornecedor,
-                dataRecebimento: registrationDate
-            });
+        // Prevenir múltiplos cliques
+        if (isSubmitting) {
+            console.log('⚠️ Já está processando uma entrada de estoque...');
+            return;
         }
         
-        // Preparar dados para confirmação
-        setRegisteredItems(itemsToRegister);
-        setRegisteredDate(registrationDate);
-        setRegisteredFornecedor(fornecedor);
-        setShowConfirmation(true);
+        setIsSubmitting(true);
+        
+        try {
+            // Preparar itens para registro
+            const itemsToRegister = itensEntrada.length > 0 ? itensEntrada : [{
+                id: Date.now().toString(),
+                produtoId,
+                quantidade
+            }];
+            
+            const registrationDate = new Date();
+            
+            console.log('🚀 Iniciando registro de entrada de estoque...');
+            console.log('   Itens a registrar:', itemsToRegister.length);
+            
+            // Registrar no sistema
+            for (const item of itemsToRegister) {
+                const produtoAntes = produtos.find(p => p.id === item.produtoId);
+                console.log(`   📦 Antes: ${produtoAntes?.nome} - Estoque: ${produtoAntes?.estoqueAtual}`);
+                
+                await addEntradaEstoque({
+                    produtoId: item.produtoId,
+                    quantidade: item.quantidade,
+                    fornecedor,
+                    dataRecebimento: registrationDate
+                });
+                
+                console.log(`   ✅ Entrada registrada para ${produtoAntes?.nome}`);
+            }
+            
+            console.log('✅ Registro concluído!');
+            
+            // Preparar dados para confirmação
+            setRegisteredItems(itemsToRegister);
+            setRegisteredDate(registrationDate);
+            setRegisteredFornecedor(fornecedor);
+            setShowConfirmation(true);
+        } catch (error) {
+            console.error('❌ Erro ao registrar entrada:', error);
+            alert('Erro ao registrar entrada de estoque. Tente novamente.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleCloseAll = () => {
@@ -354,14 +383,14 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         <button 
                             type="button" 
                             onClick={handleSubmit}
-                            disabled={itensEntrada.length === 0 && quantidade < 1}
+                            disabled={isSubmitting || (itensEntrada.length === 0 && quantidade < 1)}
                             className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-2 sm:py-3 px-4 sm:px-8 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg flex-1 sm:flex-initial flex items-center justify-center text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <PlusCircle className="mr-1 sm:mr-2" size={18} />
                             <span className="hidden sm:inline">
-                                {itensEntrada.length > 0 ? `Registrar ${itensEntrada.length} ${itensEntrada.length === 1 ? 'Produto' : 'Produtos'}` : 'Registrar Entrada'}
+                                {isSubmitting ? 'Registrando...' : itensEntrada.length > 0 ? `Registrar ${itensEntrada.length} ${itensEntrada.length === 1 ? 'Produto' : 'Produtos'}` : 'Registrar Entrada'}
                             </span>
-                            <span className="sm:hidden">Registrar</span>
+                            <span className="sm:hidden">{isSubmitting ? 'Aguarde...' : 'Registrar'}</span>
                         </button>
                     </div>
                 </div>
