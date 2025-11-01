@@ -117,7 +117,15 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         .from('clientes')
         .select('*');
       if (!clientesError && clientesData) {
-        setClientes(clientesData);
+        const mappedClientes = clientesData.map((c: any) => ({
+          id: c.id,
+          nome: c.nome,
+          tipo: c.tipo || 'Mercado',
+          endereco: c.endereco,
+          telefone: c.telefone,
+          condicaoPagamento: c.condicao_pagamento || '15 dias'
+        }));
+        setClientes(mappedClientes);
       } else if (clientesError) {
         console.error('Erro ao carregar clientes:', clientesError);
         setClientes(loadFromStorage('clientes', MOCK_CLIENTES));
@@ -350,13 +358,20 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addCliente = async (clienteData: Omit<Cliente, 'id'>) => {
     const newCliente: Cliente = {
         ...clienteData,
-        id: `c${Date.now()}`,
+        id: crypto.randomUUID(),
     };
     
     try {
       const { error } = await supabase
         .from('clientes')
-        .insert([newCliente]);
+        .insert([{
+          id: newCliente.id,
+          nome: newCliente.nome,
+          tipo: newCliente.tipo,
+          endereco: newCliente.endereco,
+          telefone: newCliente.telefone,
+          condicao_pagamento: newCliente.condicaoPagamento
+        }]);
       
       if (error) {
         console.error('Erro ao salvar cliente:', error);
@@ -372,14 +387,22 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
   
   const addPedido = async (pedidoData: Omit<Pedido, 'id'>) => {
+    // Gerar UUID válido
+    const uuid = crypto.randomUUID();
+    
     const newPedido: Pedido = {
         ...pedidoData,
-        id: `o${Date.now()}`
+        id: uuid
     };
+    
+    console.log('🛒 Tentando salvar pedido:', newPedido.id);
+    console.log('   Cliente:', newPedido.clienteId);
+    console.log('   Valor Total:', newPedido.valorTotal);
+    console.log('   Itens:', newPedido.itens.length);
     
     try {
       // Insert pedido
-      const { error: pedidoError } = await supabase
+      const { data: pedidoData, error: pedidoError } = await supabase
         .from('pedidos')
         .insert([{
           id: newPedido.id,
@@ -391,40 +414,70 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           status_pagamento: newPedido.statusPagamento,
           data_vencimento_pagamento: newPedido.dataVencimentoPagamento.toISOString(),
           assinatura: newPedido.assinatura
-        }]);
+        }])
+        .select();
       
       if (pedidoError) {
-        console.error('Erro ao salvar pedido:', pedidoError);
+        console.error('❌ ERRO ao salvar pedido no Supabase:', pedidoError);
+        console.error('   Código:', pedidoError.code);
+        console.error('   Mensagem:', pedidoError.message);
+        console.error('   Detalhes:', pedidoError.details);
+        console.error('   Hint:', pedidoError.hint);
+        
+        alert(`Erro ao salvar pedido: ${pedidoError.message}\n\nO pedido foi salvo localmente, mas pode desaparecer ao recarregar a página.`);
+        saveToStorage('pedidos', [...pedidos, newPedido]);
+        setPedidos(prev => [...prev, newPedido]);
+        return;
       }
       
+      console.log('✅ Pedido salvo no Supabase:', pedidoData);
+      
       // Insert itens
-      const itensToInsert = newPedido.itens.map((item, index) => ({
-        id: `item${Date.now()}_${index}`,
+      const itensToInsert = newPedido.itens.map((item) => ({
+        id: crypto.randomUUID(), // Gerar UUID válido para cada item
         pedido_id: newPedido.id,
         produto_id: item.produtoId,
         quantidade: item.quantidade,
         preco_unitario: item.precoUnitario
       }));
       
-      const { error: itensError } = await supabase
+      console.log('📦 Salvando itens do pedido:', itensToInsert.length);
+      
+      const { data: itensData, error: itensError } = await supabase
         .from('itens_pedido')
-        .insert(itensToInsert);
+        .insert(itensToInsert)
+        .select();
       
       if (itensError) {
-        console.error('Erro ao salvar itens do pedido:', itensError);
+        console.error('❌ ERRO ao salvar itens do pedido:', itensError);
+        console.error('   Código:', itensError.code);
+        console.error('   Mensagem:', itensError.message);
+        alert(`Erro ao salvar itens do pedido: ${itensError.message}`);
+        return;
       }
       
+      console.log('✅ Itens salvos no Supabase:', itensData);
+      
       // Update stock in Supabase
+      console.log('📦 Atualizando estoque dos produtos...');
       for (const item of newPedido.itens) {
         const produto = produtos.find(p => p.id === item.produtoId);
         if (produto) {
           const novoEstoque = produto.estoqueAtual - item.quantidade;
-          await supabase
+          console.log(`   ${produto.nome}: ${produto.estoqueAtual} - ${item.quantidade} = ${novoEstoque}`);
+          
+          const { error: estoqueError } = await supabase
             .from('produtos')
             .update({ estoque_atual: novoEstoque })
             .eq('id', item.produtoId);
+          
+          if (estoqueError) {
+            console.error(`❌ Erro ao atualizar estoque de ${produto.nome}:`, estoqueError);
+          }
         }
       }
+      
+      console.log('✅ Estoque atualizado!');
       
       // Update local state
       setProdutos(prevProdutos => {
@@ -439,9 +492,11 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       });
       
       setPedidos(prev => [...prev, newPedido]);
+      console.log('✅ Pedido adicionado com sucesso!');
       
     } catch (error) {
-      console.error('Erro ao adicionar pedido:', error);
+      console.error('❌ Exceção ao adicionar pedido:', error);
+      alert(`Erro inesperado ao salvar pedido: ${error}\n\nO pedido foi salvo localmente, mas pode desaparecer ao recarregar a página.`);
       // Fallback to localStorage
       saveToStorage('pedidos', [...pedidos, newPedido]);
       setPedidos(prev => [...prev, newPedido]);
@@ -520,8 +575,8 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const addEntradaEstoque = async (entradaData: Omit<EntradaEstoque, 'id'>) => {
-    const tempId = `e${Date.now()}`;
-    const newEntrada: EntradaEstoque = { ...entradaData, id: tempId };
+    const uuid = crypto.randomUUID();
+    const newEntrada: EntradaEstoque = { ...entradaData, id: uuid };
     
     const produtoAntes = produtos.find(p => p.id === entradaData.produtoId);
     console.log('📦 Salvando entrada de estoque...');
@@ -602,7 +657,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   
   const addPagamento = async (pedidoId: string, valor: number, metodo: MetodoPagamento) => {
       const newPagamento: Pagamento = {
-          id: `pay${Date.now()}`,
+          id: crypto.randomUUID(),
           pedidoId,
           valor,
           metodo,
@@ -691,7 +746,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addEntregador = async (entregadorData: Omit<Entregador, 'id'>) => {
     const newEntregador: Entregador = {
         ...entregadorData,
-        id: `ent${Date.now()}`,
+        id: crypto.randomUUID(),
     };
     
     try {

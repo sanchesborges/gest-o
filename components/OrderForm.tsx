@@ -113,20 +113,28 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         }
 
         const cliente = clientes.find(c => c.id === clienteId);
-        if(!cliente) return;
+        if(!cliente) {
+            alert("Cliente não encontrado.");
+            return;
+        }
         
-        const isCashPayment = cliente.condicaoPagamento.includes('vista');
+        const isCashPayment = cliente.condicaoPagamento?.toString().toLowerCase().includes('vista') || false;
 
-        await addPedido({
-            clienteId,
-            itens,
-            data: new Date(),
-            valorTotal: calculateTotal(),
-            status: StatusPedido.PENDENTE,
-            statusPagamento: StatusPagamento.PENDENTE,
-            dataVencimentoPagamento: new Date(new Date().setDate(new Date().getDate() + (isCashPayment ? 0 : 14)))
-        });
-        onClose();
+        try {
+            await addPedido({
+                clienteId,
+                itens,
+                data: new Date(),
+                valorTotal: calculateTotal(),
+                status: StatusPedido.PENDENTE,
+                statusPagamento: StatusPagamento.PENDENTE,
+                dataVencimentoPagamento: new Date(new Date().setDate(new Date().getDate() + (isCashPayment ? 0 : 14)))
+            });
+            onClose();
+        } catch (error) {
+            console.error('Erro ao salvar pedido:', error);
+            alert('Erro ao salvar pedido. Verifique o console para mais detalhes.');
+        }
     };
 
     const availableProducts = (currentItemId?: string) => 

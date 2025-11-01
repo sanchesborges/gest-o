@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Pedidos - Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        .error { color: red; }
+        .success { color: green; }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛒 Teste de Pedidos - Supabase</h1>
+        
+        <div>
+            <button onclick="checkConnection()">1. Verificar Conexão</button>
+            <button onclick="listPedidos()">2. Listar Pedidos</button>
+            <button onclick="testInsertPedido()">3. Testar Inserção</button>
+            <button onclick="clearResults()">Limpar</button>
+        </div>
+        
+        <div id="results" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = 'https://bkwgowsumeylnwbintdz.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrd2dvd3N1bWV5bG53YmludGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxOTQyMjIsImV4cCI6MjA3NTc3MDIyMn0.zCP5mCLyHMO0ag4I11ktRoPEGo_mPAGWP8idLMIwIFU';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function checkConnection() {
+            log('<h3>🔍 Verificando Conexão...</h3>');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('pedidos')
+                    .select('count');
+                
+                if (error) {
+                    log(`❌ Erro: ${error.message}`, 'error');
+                    log(`<pre>${JSON.stringify(error, null, 2)}</pre>`);
+                } else {
+                    log('✅ Conexão OK!', 'success');
+                }
+            } catch (err) {
+                log(`❌ Exceção: ${err.message}`, 'error');
+            }
+        }
+        
+        async function listPedidos() {
+            log('<h3>📋 Listando Pedidos...</h3>');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('pedidos')
+                    .select(`
+                        *,
+                        itens_pedido (*)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                if (error) {
+                    log(`❌ Erro: ${error.message}`, 'error');
+                    log(`<pre>${JSON.stringify(error, null, 2)}</pre>`);
+                } else {
+                    log(`✅ Encontrados ${data.length} pedidos`, 'success');
+                    log(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
+                }
+            } catch (err) {
+                log(`❌ Exceção: ${err.message}`, 'error');
+            }
+        }
+        
+        async function testInsertPedido() {
+            log('<h3>🧪 Testando Inserção de Pedido...</h3>');
+            
+            const pedidoId = `test_${Date.now()}`;
+            
+            try {
+                // 1. Buscar um cliente
+                log('1️⃣ Buscando cliente...');
+                const { data: clientes, error: clienteError } = await supabase
+                    .from('clientes')
+                    .select('id')
+                    .limit(1);
+                
+                if (clienteError || !clientes || clientes.length === 0) {
+                    log('❌ Nenhum cliente encontrado. Cadastre um cliente primeiro!', 'error');
+                    return;
+                }
+                
+                const clienteId = clientes[0].id;
+                log(`✅ Cliente encontrado: ${clienteId}`, 'success');
+                
+                // 2. Buscar um produto
+                log('2️⃣ Buscando produto...');
+                const { data: produtos, error: produtoError } = await supabase
+                    .from('produtos')
+                    .select('id, nome, preco_padrao')
+                    .limit(1);
+                
+                if (produtoError || !produtos || produtos.length === 0) {
+                    log('❌ Nenhum produto encontrado. Cadastre um produto primeiro!', 'error');
+                    return;
+                }
+                
+                const produto = produtos[0];
+                log(`✅ Produto encontrado: ${produto.nome} (R$ ${produto.preco_padrao})`, 'success');
+                
+                // 3. Inserir pedido
+                log('3️⃣ Inserindo pedido...');
+                const { data: pedidoData, error: pedidoError } = await supabase
+                    .from('pedidos')
+                    .insert([{
+                        id: pedidoId,
+                        cliente_id: clienteId,
+                        entregador_id: null,
+                        data: new Date().toISOString(),
+                        valor_total: produto.preco_padrao * 2,
+                        status: 'Pendente',
+                        status_pagamento: 'Pendente',
+                        data_vencimento_pagamento: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                        assinatura: null
+                    }])
+                    .select();
+                
+                if (pedidoError) {
+                    log(`❌ Erro ao inserir pedido: ${pedidoError.message}`, 'error');
+                    log(`<pre>${JSON.stringify(pedidoError, null, 2)}</pre>`);
+                    return;
+                }
+                
+                log('✅ Pedido inserido com sucesso!', 'success');
+                log(`<pre>${JSON.stringify(pedidoData, null, 2)}</pre>`);
+                
+                // 4. Inserir itens do pedido
+                log('4️⃣ Inserindo itens do pedido...');
+                const { data: itemData, error: itemError } = await supabase
+                    .from('itens_pedido')
+                    .insert([{
+                        id: `item_${Date.now()}`,
+                        pedido_id: pedidoId,
+                        produto_id: produto.id,
+                        quantidade: 2,
+                        preco_unitario: produto.preco_padrao
+                    }])
+                    .select();
+                
+                if (itemError) {
+                    log(`❌ Erro ao inserir item: ${itemError.message}`, 'error');
+                    log(`<pre>${JSON.stringify(itemError, null, 2)}</pre>`);
+                    return;
+                }
+                
+                log('✅ Item inserido com sucesso!', 'success');
+                log(`<pre>${JSON.stringify(itemData, null, 2)}</pre>`);
+                
+                log('<h3>🎉 Teste concluído com sucesso!</h3>', 'success');
+                
+            } catch (err) {
+                log(`❌ Exceção: ${err.message}`, 'error');
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>
