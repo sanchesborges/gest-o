@@ -630,7 +630,45 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     
     // 2. TENTAR SINCRONIZAR COM SUPABASE (em background, sem bloquear)
     try {
+      // Primeiro, buscar o estoque atual do banco ANTES de atualizar
+      const { data: produtoAtual, error: fetchError } = await supabase
+        .from('produtos')
+        .select('nome, estoque_atual')
+        .eq('id', entradaData.produtoId)
+        .single();
+      
+      if (fetchError) {
+        console.error('❌ Erro ao buscar produto:', fetchError);
+        console.log('💾 Entrada salva apenas localmente');
+        return;
+      }
+      
+      if (!produtoAtual) {
+        console.error('❌ Produto não encontrado no banco');
+        return;
+      }
+      
+      const estoqueAntesBanco = produtoAtual.estoque_atual;
+      const novoEstoque = estoqueAntesBanco + entradaData.quantidade;
+      console.log(`📦 Atualizando estoque de ${produtoAtual.nome}: ${estoqueAntesBanco} + ${entradaData.quantidade} = ${novoEstoque}`);
+      
+      // Atualizar estoque no banco
+      const { error: updateError } = await supabase
+        .from('produtos')
+        .update({ estoque_atual: novoEstoque })
+        .eq('id', entradaData.produtoId);
+      
+      if (updateError) {
+        console.error('❌ Erro ao atualizar estoque no Supabase:', updateError);
+        console.log('💾 Entrada salva apenas localmente');
+        return;
+      }
+      
+      console.log('✅ Estoque atualizado no Supabase!');
+      
+      // Salvar entrada de estoque
       const dataToInsert = {
+        id: newEntrada.id,
         produto_id: entradaData.produtoId,
         quantidade: entradaData.quantidade,
         fornecedor: entradaData.fornecedor,
@@ -638,42 +676,17 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         data_validade: entradaData.dataValidade?.toISOString()
       };
       
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('entradas_estoque')
         .insert([dataToInsert]);
       
-      if (error) {
-        console.warn('⚠️ Não foi possível sincronizar com Supabase:', error.message);
-        console.log('💾 Dados mantidos apenas localmente');
+      if (insertError) {
+        console.warn('⚠️ Erro ao salvar entrada no Supabase:', insertError.message);
+        console.log('💾 Entrada mantida apenas localmente');
       } else {
-        console.log('✅ Sincronizado com Supabase!');
-        
-        // Atualizar estoque no Supabase também
-        // Buscar estoque atual do banco (não do estado local que já foi atualizado)
-        const { data: produtoAtual, error: fetchError } = await supabase
-          .from('produtos')
-          .select('nome, estoque_atual')
-          .eq('id', entradaData.produtoId)
-          .single();
-        
-        if (fetchError) {
-          console.error('❌ Erro ao buscar produto:', fetchError);
-        } else if (produtoAtual) {
-          const novoEstoque = produtoAtual.estoque_atual + entradaData.quantidade;
-          console.log(`📦 Atualizando estoque de ${produtoAtual.nome}: ${produtoAtual.estoque_atual} + ${entradaData.quantidade} = ${novoEstoque}`);
-          
-          const { error: updateError } = await supabase
-            .from('produtos')
-            .update({ estoque_atual: novoEstoque })
-            .eq('id', entradaData.produtoId);
-          
-          if (updateError) {
-            console.error('❌ Erro ao atualizar estoque no Supabase:', updateError);
-          } else {
-            console.log('✅ Estoque atualizado no Supabase!');
-          }
-        }
+        console.log('✅ Entrada salva no Supabase!');
       }
+      
     } catch (error) {
       console.warn('⚠️ Erro ao sincronizar com Supabase:', error);
       console.log('💾 Dados mantidos apenas localmente');
