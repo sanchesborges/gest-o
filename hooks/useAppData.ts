@@ -432,7 +432,51 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       
       console.log('✅ Pedido salvo no Supabase:', pedidoData);
       
-      // Insert itens
+      // Validar estoque ANTES de salvar
+      console.log('📦 Validando estoque dos produtos...');
+      for (const item of newPedido.itens) {
+        const produto = produtos.find(p => p.id === item.produtoId);
+        if (produto) {
+          const novoEstoque = produto.estoqueAtual - item.quantidade;
+          console.log(`   ${produto.nome}: ${produto.estoqueAtual} - ${item.quantidade} = ${novoEstoque}`);
+          
+          if (novoEstoque < 0) {
+            console.error(`❌ Estoque insuficiente para ${produto.nome}`);
+            alert(`Estoque insuficiente!\n\nProduto: ${produto.nome}\nEstoque atual: ${produto.estoqueAtual}\nQuantidade solicitada: ${item.quantidade}\n\nPor favor, ajuste a quantidade ou adicione estoque.`);
+            
+            // Deletar o pedido que foi criado
+            await supabase.from('pedidos').delete().eq('id', newPedido.id);
+            return;
+          }
+        }
+      }
+      
+      // Update stock in Supabase ANTES de inserir itens
+      console.log('📦 Atualizando estoque dos produtos...');
+      for (const item of newPedido.itens) {
+        const produto = produtos.find(p => p.id === item.produtoId);
+        if (produto) {
+          const novoEstoque = produto.estoqueAtual - item.quantidade;
+          
+          const { error: estoqueError } = await supabase
+            .from('produtos')
+            .update({ estoque_atual: novoEstoque })
+            .eq('id', item.produtoId);
+          
+          if (estoqueError) {
+            console.error(`❌ Erro ao atualizar estoque de ${produto.nome}:`, estoqueError);
+            alert(`Erro ao atualizar estoque: ${estoqueError.message}`);
+            
+            // Deletar o pedido que foi criado
+            await supabase.from('pedidos').delete().eq('id', newPedido.id);
+            return;
+          }
+        }
+      }
+      
+      console.log('✅ Estoque atualizado!');
+      
+      // Insert itens DEPOIS de atualizar estoque
       const itensToInsert = newPedido.itens.map((item) => ({
         id: crypto.randomUUID(), // Gerar UUID válido para cada item
         pedido_id: newPedido.id,
@@ -457,25 +501,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
       
       console.log('✅ Itens salvos no Supabase:', itensData);
-      
-      // Update stock in Supabase
-      console.log('📦 Atualizando estoque dos produtos...');
-      for (const item of newPedido.itens) {
-        const produto = produtos.find(p => p.id === item.produtoId);
-        if (produto) {
-          const novoEstoque = produto.estoqueAtual - item.quantidade;
-          console.log(`   ${produto.nome}: ${produto.estoqueAtual} - ${item.quantidade} = ${novoEstoque}`);
-          
-          const { error: estoqueError } = await supabase
-            .from('produtos')
-            .update({ estoque_atual: novoEstoque })
-            .eq('id', item.produtoId);
-          
-          if (estoqueError) {
-            console.error(`❌ Erro ao atualizar estoque de ${produto.nome}:`, estoqueError);
-          }
-        }
-      }
       
       console.log('✅ Estoque atualizado!');
       
