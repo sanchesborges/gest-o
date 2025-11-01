@@ -88,49 +88,56 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
     setIsGeneratingImage(true);
     
     try {
-      // Encontrar o container pai com scroll
-      const scrollContainer = noteRef.current.parentElement;
+      const element = noteRef.current;
+      const parent = element.parentElement;
       
-      // Salvar estados originais
-      const originalOverflow = noteRef.current.style.overflow;
-      const originalHeight = noteRef.current.style.height;
-      const originalMaxHeight = noteRef.current.style.maxHeight;
-      const originalContainerOverflow = scrollContainer?.style.overflow;
-      const originalContainerMaxHeight = scrollContainer?.style.maxHeight;
+      // Encontrar elementos que precisam ser forçados a aparecer
+      const mobileItems = element.querySelector('.md\\:hidden');
+      const desktopTable = element.querySelector('.hidden.md\\:block');
       
-      // Remover restrições de altura e overflow
-      noteRef.current.style.overflow = 'visible';
-      noteRef.current.style.height = 'auto';
-      noteRef.current.style.maxHeight = 'none';
+      // Salvar estilos originais
+      const originalParentOverflow = parent?.style.overflow;
+      const originalParentMaxHeight = parent?.style.maxHeight;
+      const originalMobileDisplay = mobileItems ? (mobileItems as HTMLElement).style.display : '';
+      const originalDesktopDisplay = desktopTable ? (desktopTable as HTMLElement).style.display : '';
       
-      if (scrollContainer) {
-        scrollContainer.style.overflow = 'visible';
-        scrollContainer.style.maxHeight = 'none';
+      // Remover restrições temporariamente
+      if (parent) {
+        parent.style.overflow = 'visible';
+        parent.style.maxHeight = 'none';
       }
       
-      // Aguardar o DOM atualizar
+      // Forçar tabela desktop a aparecer e esconder versão mobile
+      if (mobileItems) {
+        (mobileItems as HTMLElement).style.display = 'none';
+      }
+      if (desktopTable) {
+        (desktopTable as HTMLElement).style.display = 'block';
+      }
+      
+      // Aguardar renderização
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Capturar com html2canvas
+      // Importar e usar html2canvas
       const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(noteRef.current, {
+      const canvas = await html2canvas(element, {
         scale: 2,
         backgroundColor: '#ffffff',
         logging: false,
         useCORS: true,
         allowTaint: true,
-        scrollY: -window.scrollY,
-        scrollX: -window.scrollX,
       });
       
-      // Restaurar estados originais
-      noteRef.current.style.overflow = originalOverflow;
-      noteRef.current.style.height = originalHeight;
-      noteRef.current.style.maxHeight = originalMaxHeight;
-      
-      if (scrollContainer) {
-        scrollContainer.style.overflow = originalContainerOverflow || '';
-        scrollContainer.style.maxHeight = originalContainerMaxHeight || '';
+      // Restaurar estilos
+      if (parent) {
+        parent.style.overflow = originalParentOverflow || '';
+        parent.style.maxHeight = originalParentMaxHeight || '';
+      }
+      if (mobileItems) {
+        (mobileItems as HTMLElement).style.display = originalMobileDisplay;
+      }
+      if (desktopTable) {
+        (desktopTable as HTMLElement).style.display = originalDesktopDisplay;
       }
       
       const imageData = canvas.toDataURL('image/png', 1.0);
