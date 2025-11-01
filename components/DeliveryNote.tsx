@@ -88,42 +88,58 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
     setIsGeneratingImage(true);
     
     try {
-      // Salvar o estado original do scroll
+      // Encontrar o container pai com scroll
+      const scrollContainer = noteRef.current.parentElement;
+      
+      // Salvar estados originais
       const originalOverflow = noteRef.current.style.overflow;
       const originalHeight = noteRef.current.style.height;
       const originalMaxHeight = noteRef.current.style.maxHeight;
+      const originalContainerOverflow = scrollContainer?.style.overflow;
+      const originalContainerMaxHeight = scrollContainer?.style.maxHeight;
       
-      // Remover overflow e altura máxima temporariamente para capturar tudo
+      // Remover restrições de altura e overflow
       noteRef.current.style.overflow = 'visible';
       noteRef.current.style.height = 'auto';
       noteRef.current.style.maxHeight = 'none';
       
-      // Aguardar um momento para o DOM atualizar
-      await new Promise(resolve => setTimeout(resolve, 100));
+      if (scrollContainer) {
+        scrollContainer.style.overflow = 'visible';
+        scrollContainer.style.maxHeight = 'none';
+      }
       
-      // Usar html2canvas para capturar a nota completa
+      // Aguardar o DOM atualizar
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Capturar com html2canvas
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(noteRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
         logging: false,
-        windowWidth: noteRef.current.scrollWidth,
-        windowHeight: noteRef.current.scrollHeight,
-        width: noteRef.current.scrollWidth,
-        height: noteRef.current.scrollHeight,
+        useCORS: true,
+        allowTaint: true,
+        scrollY: -window.scrollY,
+        scrollX: -window.scrollX,
       });
       
-      // Restaurar o estado original
+      // Restaurar estados originais
       noteRef.current.style.overflow = originalOverflow;
       noteRef.current.style.height = originalHeight;
       noteRef.current.style.maxHeight = originalMaxHeight;
       
-      const imageData = canvas.toDataURL('image/png');
+      if (scrollContainer) {
+        scrollContainer.style.overflow = originalContainerOverflow || '';
+        scrollContainer.style.maxHeight = originalContainerMaxHeight || '';
+      }
+      
+      const imageData = canvas.toDataURL('image/png', 1.0);
       setIsGeneratingImage(false);
       return imageData;
     } catch (error) {
       console.error('Erro ao capturar imagem:', error);
       setIsGeneratingImage(false);
+      alert('Erro ao gerar imagem. Tente novamente.');
       return '';
     }
   };
@@ -228,8 +244,8 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
         </div>
 
         {/* Content */}
-        <div className="flex-grow overflow-y-auto bg-gray-100 p-4">
-            <div ref={noteRef} className="space-y-6 bg-white p-6 rounded-lg shadow-lg">
+        <div className="flex-grow overflow-y-auto bg-gray-100 p-4" id="note-scroll-container">
+            <div ref={noteRef} className="space-y-4 bg-white p-6 rounded-lg shadow-lg min-h-full">
                 {/* Cabeçalho da Nota */}
                 <div className="text-center border-b-2 border-indigo-600 pb-4 mb-4">
                     <h1 className="text-3xl font-bold text-indigo-600">MANÁ</h1>
@@ -314,14 +330,16 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
                 </table>
             </div>
 
-            <div>
-                <h4 className="font-semibold mb-2 text-gray-800">Assinatura do Cliente:</h4>
+            <div className="mt-6 pb-4">
+                <h4 className="font-semibold mb-3 text-gray-800">Assinatura do Cliente:</h4>
                 {pedido.assinatura ? (
-                    <img src={pedido.assinatura} alt="Assinatura" className="border-2 rounded-lg bg-white p-2 w-full sm:w-1/2"/>
+                    <div className="border-2 rounded-lg bg-white p-2 w-full sm:w-1/2">
+                        <img src={pedido.assinatura} alt="Assinatura" className="w-full h-auto"/>
+                    </div>
                 ) : (
                     <>
-                        <div className="relative w-full border-2 border-dashed rounded-lg">
-                             <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">Assine aqui</p>
+                        <div className="relative w-full border-2 border-dashed rounded-lg bg-gray-50">
+                             <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm">Assine aqui</p>
                              <SignatureCanvas ref={sigCanvas} penColor='black' canvasProps={{className: 'w-full h-40 bg-transparent rounded-lg'}} />
                         </div>
                          <div className="flex space-x-2 mt-2">
