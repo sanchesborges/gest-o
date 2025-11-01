@@ -1,10 +1,9 @@
--- Verificar estoque de todos os produtos
+-- Script para verificar o estoque atual de todos os produtos
 
+-- 1. Ver todos os produtos e seu status de estoque
 SELECT 
     id,
     nome,
-    tipo::text as tipo,
-    tamanho_pacote,
     estoque_atual,
     estoque_minimo,
     CASE 
@@ -12,44 +11,36 @@ SELECT
         WHEN estoque_atual = 0 THEN '⚠️ ZERADO'
         WHEN estoque_atual < estoque_minimo THEN '⚠️ BAIXO'
         ELSE '✅ OK'
-    END as status_estoque
+    END as status,
+    CASE 
+        WHEN estoque_atual < estoque_minimo THEN estoque_minimo - estoque_atual
+        ELSE 0
+    END as faltam
 FROM produtos
-ORDER BY estoque_atual ASC, nome;
+ORDER BY 
+    CASE 
+        WHEN estoque_atual < 0 THEN 1
+        WHEN estoque_atual = 0 THEN 2
+        WHEN estoque_atual < estoque_minimo THEN 3
+        ELSE 4
+    END,
+    estoque_atual ASC;
 
--- Contar produtos por status
+-- 2. Resumo geral
 SELECT 
-    COUNT(*) FILTER (WHERE estoque_atual < 0) as negativos,
-    COUNT(*) FILTER (WHERE estoque_atual = 0) as zerados,
-    COUNT(*) FILTER (WHERE estoque_atual > 0 AND estoque_atual < estoque_minimo) as baixos,
-    COUNT(*) FILTER (WHERE estoque_atual >= estoque_minimo) as ok,
-    COUNT(*) as total
+    COUNT(*) as total_produtos,
+    COUNT(CASE WHEN estoque_atual < 0 THEN 1 END) as negativos,
+    COUNT(CASE WHEN estoque_atual = 0 THEN 1 END) as zerados,
+    COUNT(CASE WHEN estoque_atual < estoque_minimo AND estoque_atual > 0 THEN 1 END) as baixos,
+    COUNT(CASE WHEN estoque_atual >= estoque_minimo THEN 1 END) as ok
 FROM produtos;
 
--- Produtos com estoque negativo (ERRO!)
+-- 3. Produtos com estoque negativo (se houver)
 SELECT 
     id,
     nome,
     estoque_atual,
     estoque_minimo
 FROM produtos
-WHERE estoque_atual < 0;
-
--- Produtos com estoque zerado
-SELECT 
-    id,
-    nome,
-    estoque_atual,
-    estoque_minimo
-FROM produtos
-WHERE estoque_atual = 0;
-
--- Produtos com estoque baixo
-SELECT 
-    id,
-    nome,
-    estoque_atual,
-    estoque_minimo,
-    (estoque_minimo - estoque_atual) as faltam
-FROM produtos
-WHERE estoque_atual > 0 AND estoque_atual < estoque_minimo
-ORDER BY faltam DESC;
+WHERE estoque_atual < 0
+ORDER BY estoque_atual ASC;
