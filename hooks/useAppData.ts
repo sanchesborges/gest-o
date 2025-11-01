@@ -432,12 +432,12 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       console.log('✅ Pedido salvo no Supabase:', pedidoData);
 
-      // Validar e atualizar estoque dos produtos
-      console.log('📦 Validando e atualizando estoque dos produtos...');
+      // Validar estoque ANTES de salvar itens
+      // O trigger atualizar_estoque_pedido vai atualizar o estoque automaticamente
+      console.log('📦 Validando estoque dos produtos...');
       const estoqueAtualizado: { [key: string]: number } = {};
       
       for (const item of newPedido.itens) {
-        // Buscar estoque atual do banco (não do estado local)
         const { data: produtoAtual, error: fetchError } = await supabase
           .from('produtos')
           .select('estoque_atual, nome')
@@ -461,22 +461,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           console.error(`❌ Estoque insuficiente para ${produtoAtual.nome}`);
           alert(`Estoque insuficiente!\n\nProduto: ${produtoAtual.nome}\nEstoque atual: ${estoqueAtual}\nQuantidade solicitada: ${item.quantidade}\n\nPor favor, ajuste a quantidade ou adicione estoque.`);
           
-          // Deletar o pedido que foi criado
-          await supabase.from('pedidos').delete().eq('id', newPedido.id);
-          return;
-        }
-
-        // Atualizar estoque no banco
-        const { error: estoqueError } = await supabase
-          .from('produtos')
-          .update({ estoque_atual: novoEstoque })
-          .eq('id', item.produtoId);
-
-        if (estoqueError) {
-          console.error(`❌ Erro ao atualizar estoque de ${produtoAtual.nome}:`, estoqueError);
-          alert(`Erro ao atualizar estoque: ${estoqueError.message}`);
-          
-          // Deletar o pedido que foi criado
           await supabase.from('pedidos').delete().eq('id', newPedido.id);
           return;
         }
@@ -485,11 +469,12 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         estoqueAtualizado[item.produtoId] = novoEstoque;
       }
 
-      console.log('✅ Estoque atualizado!');
+      console.log('✅ Estoque validado! Todos os produtos têm estoque suficiente.');
 
-      // Insert itens DEPOIS de atualizar estoque
+      // Salvar itens do pedido
+      // O trigger atualizar_estoque_pedido vai diminuir o estoque automaticamente
       const itensToInsert = newPedido.itens.map((item) => ({
-        id: crypto.randomUUID(), // Gerar UUID válido para cada item
+        id: crypto.randomUUID(),
         pedido_id: newPedido.id,
         produto_id: item.produtoId,
         quantidade: item.quantidade,
@@ -497,6 +482,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       }));
 
       console.log('📦 Salvando itens do pedido:', itensToInsert.length);
+      console.log('   ⚠️ O trigger atualizar_estoque_pedido vai atualizar o estoque automaticamente');
 
       const { data: itensData, error: itensError } = await supabase
         .from('itens_pedido')
@@ -507,11 +493,16 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         console.error('❌ ERRO ao salvar itens do pedido:', itensError);
         console.error('   Código:', itensError.code);
         console.error('   Mensagem:', itensError.message);
-        alert(`Erro ao salvar itens do pedido: ${itensError.message}`);
+        
+        // Deletar o pedido
+        await supabase.from('pedidos').delete().eq('id', newPedido.id);
+        
+        alert(`Erro ao salvar itens do pedido: ${itensError.message}\n\nO pedido foi cancelado.`);
         return;
       }
 
       console.log('✅ Itens salvos no Supabase:', itensData);
+      console.log('✅ Estoque atualizado automaticamente pelo trigger!');
 
       // Atualizar estado local com os valores corretos do banco
       setProdutos(prevProdutos =>
@@ -614,7 +605,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     console.log('   Quantidade:', entradaData.quantidade);
 
     try {
-      // 1. Buscar estoque atual do banco (com lock para evitar race conditions)
+      // Buscar estoque atual para calcular o novo (para atualizar estado local)
       const { data: produtoAtual, error: fetchError } = await supabase
         .from('produtos')
         .select('estoque_atual, nome')
@@ -627,12 +618,13 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
 
       console.log(`   Estoque atual no banco: ${produtoAtual.estoque_atual}`);
-
-      // 2. Calcular novo estoque
       const novoEstoque = produtoAtual.estoque_atual + entradaData.quantidade;
-      console.log(`   Novo estoque calculado: ${novoEstoque} (${produtoAtual.estoque_atual} + ${entradaData.quantidade})`);
+      console.log(`   Novo estoque esperado: ${novoEstoque} (${produtoAtual.estoque_atual} + ${entradaData.quantidade})`);
 
-      // 3. Salvar entrada PRIMEIRO (para ter registro)
+      // Salvar entrada
+      // O trigger atualizar_estoque_entrada vai aumentar o estoque automaticamente
+      console.log('   ⚠️ O trigger atualizar_estoque_entrada vai atualizar o estoque automaticamente');
+      
       const { error: insertError } = await supabase
         .from('entradas_estoque')
         .insert([{
@@ -650,23 +642,9 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
 
       console.log('   ✅ Entrada salva no banco');
+      console.log('   ✅ Estoque atualizado automaticamente pelo trigger!');
 
-      // 4. Atualizar estoque do produto
-      const { error: updateError } = await supabase
-        .from('produtos')
-        .update({ estoque_atual: novoEstoque })
-        .eq('id', entradaData.produtoId);
-
-      if (updateError) {
-        console.error('❌ Erro ao atualizar estoque:', updateError);
-        // Tentar reverter a entrada
-        await supabase.from('entradas_estoque').delete().eq('id', newEntrada.id);
-        throw updateError;
-      }
-
-      console.log(`   ✅ Estoque atualizado no banco: ${novoEstoque}`);
-
-      // 5. Atualizar estado local
+      // Atualizar estado local com o novo estoque calculado
       setProdutos(prevProdutos =>
         prevProdutos.map(p =>
           p.id === entradaData.produtoId
