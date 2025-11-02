@@ -56,6 +56,10 @@ export const Home: React.FC = () => {
         .filter(p => p.statusPagamento === StatusPagamento.ATRASADO)
         .reduce((acc, p) => acc + p.valorTotal, 0);
 
+    const contasPagas = pedidos
+        .filter(p => p.statusPagamento === StatusPagamento.PAGO)
+        .reduce((acc, p) => acc + p.valorTotal, 0);
+
     const faturamentoTotal = pedidos.reduce((acc, p) => acc + p.valorTotal, 0);
 
     const produtosBaixoEstoque = produtos.filter(p => p.estoqueAtual < p.estoqueMinimo).length;
@@ -104,8 +108,8 @@ export const Home: React.FC = () => {
             title: 'Contas a Receber',
             value: `R$ ${contasReceber.toFixed(2)}`,
             status: `${pedidos.filter(p => p.statusPagamento === StatusPagamento.PENDENTE).length} pendentes`,
-            icon: <DollarSign size={20} className="text-green-600" />,
-            color: 'bg-green-100',
+            icon: <DollarSign size={20} className="text-yellow-600" />,
+            color: 'bg-yellow-100',
             path: '/financeiro'
         },
         {
@@ -114,6 +118,14 @@ export const Home: React.FC = () => {
             status: `${pedidos.filter(p => p.statusPagamento === StatusPagamento.ATRASADO).length} atrasadas`,
             icon: <AlertCircle size={20} className="text-red-600" />,
             color: 'bg-red-100',
+            path: '/financeiro'
+        },
+        {
+            title: 'Contas Pagas',
+            value: `R$ ${contasPagas.toFixed(2)}`,
+            status: `${pedidos.filter(p => p.statusPagamento === StatusPagamento.PAGO).length} pagas`,
+            icon: <DollarSign size={20} className="text-green-600" />,
+            color: 'bg-green-100',
             path: '/financeiro'
         },
         {

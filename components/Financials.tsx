@@ -131,6 +131,7 @@ export const Financials: React.FC<{userRole: UserRole}> = ({userRole}) => {
   
   const totalReceber = pendingPayments.reduce((sum, p) => sum + p.valorTotal, 0);
   const totalAtrasado = pendingPayments.filter(p => p.statusPagamento === StatusPagamento.ATRASADO).reduce((sum, p) => sum + p.valorTotal, 0);
+  const totalPago = pedidos.filter(p => p.statusPagamento === StatusPagamento.PAGO).reduce((sum, p) => sum + p.valorTotal, 0);
 
   const handleRegisterPayment = (pedido: Pedido) => {
       setSelectedOrder(pedido);
@@ -141,9 +142,10 @@ export const Financials: React.FC<{userRole: UserRole}> = ({userRole}) => {
       {selectedOrder && <AddPaymentModal pedido={selectedOrder} onClose={() => setSelectedOrder(null)} />}
       <h2 className="text-3xl font-bold text-gray-800 flex items-center"><DollarSign className="mr-3" size={32} /> Contas a Receber</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SummaryCard title="Total a Receber" value={`R$ ${totalReceber.toFixed(2)}`} icon={<DollarSign className="text-white"/>} colorClass="bg-yellow-500" />
           <SummaryCard title="Total Vencido" value={`R$ ${totalAtrasado.toFixed(2)}`} icon={<Clock className="text-white"/>} colorClass="bg-red-500" />
+          <SummaryCard title="Total Pago" value={`R$ ${totalPago.toFixed(2)}`} icon={<CheckCircle className="text-white"/>} colorClass="bg-green-500" />
       </div>
 
       {pendingPayments.length === 0 ? (
