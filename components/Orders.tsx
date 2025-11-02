@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { PlusCircle, ShoppingCart, Printer, Filter, Bike, X, Trash2 } from 'lucide-react';
+import { PlusCircle, ShoppingCart, Printer, Filter, Bike, X, Trash2, Factory } from 'lucide-react';
 import { Pedido, StatusPedido, StatusPagamento, UserRole } from '../types';
 import { OrderForm } from './OrderForm';
 import { DeliveryNote } from './DeliveryNote';
+import { FactoryOrders } from './FactoryOrders';
 import { useParams } from 'react-router-dom';
 
 const getStatusColor = (status: StatusPedido) => {
@@ -250,6 +251,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isNoteOpen, setIsNoteOpen] = useState(false);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [isFactoryOrdersOpen, setIsFactoryOrdersOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
     const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -318,6 +320,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
             {isFormOpen && <OrderForm onClose={() => setIsFormOpen(false)} />}
             {isNoteOpen && selectedOrder && <DeliveryNote pedido={selectedOrder} onClose={handleCloseModals} />}
             {isAssignModalOpen && selectedOrder && userRole === UserRole.ADMIN && <AssignDriverModal pedido={selectedOrder} onClose={handleCloseModals} />}
+            {isFactoryOrdersOpen && <FactoryOrders onClose={() => setIsFactoryOrdersOpen(false)} />}
 
             {/* Confirmation Modal */}
             {showDeleteConfirm && (
@@ -359,10 +362,22 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                         </button>
                     )}
                     {userRole === UserRole.ADMIN && (
-                        <button onClick={() => setIsFormOpen(true)} className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors w-full sm:w-auto">
-                            <PlusCircle className="mr-2" size={20} />
-                            Novo Pedido
-                        </button>
+                        <>
+                            <button 
+                                onClick={() => setIsFactoryOrdersOpen(true)} 
+                                className="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-purple-700 transition-colors w-full sm:w-auto"
+                            >
+                                <Factory className="mr-2" size={20} />
+                                Pedidos Fábrica
+                            </button>
+                            <button 
+                                onClick={() => setIsFormOpen(true)} 
+                                className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors w-full sm:w-auto"
+                            >
+                                <PlusCircle className="mr-2" size={20} />
+                                Novo Pedido
+                            </button>
+                        </>
                     )}
                 </div>
             </div>
