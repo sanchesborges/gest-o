@@ -136,18 +136,42 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     if (!contentRef.current) return;
 
     try {
+      // Salvar estilo original
+      const originalOverflow = contentRef.current.style.overflow;
+      const originalMaxHeight = contentRef.current.style.maxHeight;
+
+      // Remover scroll temporariamente para capturar tudo
+      contentRef.current.style.overflow = 'visible';
+      contentRef.current.style.maxHeight = 'none';
+
+      // Aguardar um momento para o DOM atualizar
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const canvas = await html2canvas(contentRef.current, {
         backgroundColor: '#ffffff',
         scale: 2,
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
       });
 
+      // Restaurar estilo original
+      contentRef.current.style.overflow = originalOverflow;
+      contentRef.current.style.maxHeight = originalMaxHeight;
+
       const link = document.createElement('a');
-      link.download = `pedido-fabrica-${new Date().toISOString().split('T')[0]}.png`;
+      link.download = `pedido-fabrica-${orderDate.toISOString().split('T')[0]}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (error) {
       console.error('Erro ao gerar imagem:', error);
       alert('Erro ao gerar imagem. Tente novamente.');
+
+      // Garantir que o estilo seja restaurado mesmo em caso de erro
+      if (contentRef.current) {
+        contentRef.current.style.overflow = '';
+        contentRef.current.style.maxHeight = '';
+      }
     }
   };
 
@@ -155,10 +179,28 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     if (!contentRef.current) return;
 
     try {
+      // Salvar estilo original
+      const originalOverflow = contentRef.current.style.overflow;
+      const originalMaxHeight = contentRef.current.style.maxHeight;
+
+      // Remover scroll temporariamente para capturar tudo
+      contentRef.current.style.overflow = 'visible';
+      contentRef.current.style.maxHeight = 'none';
+
+      // Aguardar um momento para o DOM atualizar
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const canvas = await html2canvas(contentRef.current, {
         backgroundColor: '#ffffff',
         scale: 2,
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
       });
+
+      // Restaurar estilo original
+      contentRef.current.style.overflow = originalOverflow;
+      contentRef.current.style.maxHeight = originalMaxHeight;
 
       // Converter canvas para blob
       canvas.toBlob((blob) => {
@@ -201,6 +243,12 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     } catch (error) {
       console.error('Erro ao compartilhar:', error);
       alert('Erro ao compartilhar. Tente novamente.');
+
+      // Garantir que o estilo seja restaurado mesmo em caso de erro
+      if (contentRef.current) {
+        contentRef.current.style.overflow = '';
+        contentRef.current.style.maxHeight = '';
+      }
     }
   };
 
@@ -251,30 +299,30 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                 Data Início
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                 Data Fim
               </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
-            <div className="flex items-end">
+            <div className="col-span-2 md:col-span-1 flex items-end">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -282,7 +330,7 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                   onChange={(e) => setIncludeDelivered(e.target.checked)}
                   className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-xs md:text-sm font-medium text-gray-700">
                   Incluir pedidos entregues
                 </span>
               </label>
