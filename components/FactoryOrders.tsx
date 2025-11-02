@@ -210,27 +210,34 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         }
 
         // Criar mensagem de texto
-        let message = `*PEDIDO PARA FÁBRICA - MANÁ*%0A%0A`;
-        message += `📅 *Data:* ${orderDate.toLocaleDateString('pt-BR')}%0A`;
+        let message = `*PEDIDO PARA FÁBRICA - MANÁ*%0A`;
+        message += `━━━━━━━━━━━━━━━━━━━━%0A%0A`;
+        message += `📅 *Data do Pedido:* ${orderDate.toLocaleDateString('pt-BR')}%0A`;
 
         if (startDate || endDate) {
-          message += `📊 *Período:* `;
+          message += `📊 *Período Consolidado:* `;
           if (startDate) message += `${new Date(startDate).toLocaleDateString('pt-BR')}`;
           if (startDate && endDate) message += ` até `;
           if (endDate) message += `${new Date(endDate).toLocaleDateString('pt-BR')}`;
           message += `%0A`;
         }
 
-        message += `%0A*PRODUTOS NECESSÁRIOS:*%0A`;
+        message += `%0A━━━━━━━━━━━━━━━━━━━━%0A`;
+        message += `📦 *PRODUTOS NECESSÁRIOS*%0A`;
         message += `━━━━━━━━━━━━━━━━━━━━%0A%0A`;
 
         consolidatedProducts.forEach(product => {
-          message += `• *${product.nome}*: ${product.quantidadeTotal} un%0A`;
+          message += `▪️ *${product.nome}*%0A`;
+          message += `   Quantidade: *${product.quantidadeTotal} pacotes*%0A%0A`;
         });
 
-        message += `%0A━━━━━━━━━━━━━━━━━━━━%0A`;
-        message += `📦 *TOTAL:* ${totalItems} itens | ${totalKilos.toFixed(1)} kg%0A%0A`;
-        message += `_Pedido gerado automaticamente pelo sistema SB_`;
+        message += `━━━━━━━━━━━━━━━━━━━━%0A`;
+        message += `📊 *RESUMO TOTAL*%0A`;
+        message += `━━━━━━━━━━━━━━━━━━━━%0A`;
+        message += `📦 Total de Pacotes: *${totalItems}*%0A`;
+        message += `⚖️ Peso Total: *${totalKilos.toFixed(1)} kg*%0A%0A`;
+        message += `━━━━━━━━━━━━━━━━━━━━%0A`;
+        message += `_Pedido gerado automaticamente pelo Sistema SB_`;
 
         // Abrir WhatsApp com a mensagem
         const whatsappUrl = `https://wa.me/?text=${message}`;
