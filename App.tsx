@@ -15,7 +15,6 @@ import { UserRole } from './types';
 import { Products } from './components/Products';
 import { Entregadores } from './components/Entregadores';
 import { InstallPrompt } from './components/InstallPrompt';
-import { TestConnection } from './components/TestConnection';
 
 
 
@@ -113,7 +112,6 @@ const AdminPortal: React.FC = () => {
                     <Route path="/pedidos" element={<Orders userRole={userRole} />} />
                     <Route path="/clientes" element={<Clients userRole={userRole} />} />
                     <Route path="/entregadores" element={<Entregadores />} />
-                    <Route path="/test-connection" element={<TestConnection />} />
                     <Route
                         path="/financeiro"
                         element={userRole === UserRole.ADMIN ? <Financials userRole={userRole} /> : <Navigate to="/" />}
