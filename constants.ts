@@ -101,8 +101,8 @@ export const MOCK_PEDIDOS: Pedido[] = [
 ];
 
 export const MOCK_ENTRADAS_ESTOQUE: EntradaEstoque[] = [
-    { id: 'e1', produtoId: 'p1', quantidade: 30, dataRecebimento: new Date(), fornecedor: 'Fábrica Matriz' },
-    { id: 'e2', produtoId: 'p3', quantidade: 20, dataRecebimento: yesterday, fornecedor: 'Fábrica Matriz' },
+    { id: 'e1', produtoId: 'p1', quantidade: 30, dataRecebimento: new Date(), fornecedor: 'Congelados Maná' },
+    { id: 'e2', produtoId: 'p3', quantidade: 20, dataRecebimento: yesterday, fornecedor: 'Congelados Maná' },
 ];
 
 export const MOCK_PAGAMENTOS: Pagamento[] = [

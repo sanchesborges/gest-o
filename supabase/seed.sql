@@ -114,7 +114,7 @@ BEGIN
     v_produto_id,
     50,
     NOW(),
-    'Fábrica Matriz'
+    'Congelados Maná'
   );
 END $$;
 

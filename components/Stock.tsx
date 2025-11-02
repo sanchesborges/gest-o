@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { PlusCircle, Package, TrendingUp, TrendingDown, Box, Plus, Minus, Trash2, ShoppingCart } from 'lucide-react';
+import { PlusCircle, Package, TrendingUp, TrendingDown, Box, Plus, Minus, Trash2, ShoppingCart, Edit } from 'lucide-react';
 import { Produto, UserRole } from '../types';
 import { Link } from 'react-router-dom';
 import { OrderConfirmationModal } from './OrderConfirmationModal';
@@ -10,7 +10,8 @@ const StockCard: React.FC<{
   produto: Produto; 
   isSelected: boolean; 
   onToggleSelect: (id: string) => void;
-}> = ({ produto, isSelected, onToggleSelect }) => {
+  onEdit: (produto: Produto) => void;
+}> = ({ produto, isSelected, onToggleSelect, onEdit }) => {
   const isLowStock = produto.estoqueAtual < produto.estoqueMinimo;
 
   return (
@@ -28,9 +29,18 @@ const StockCard: React.FC<{
             <p className="text-sm text-gray-500">{produto.tamanhoPacote}</p>
           </div>
         </div>
-        <span className={`py-1 px-3 rounded-full text-xs font-bold ${isLowStock ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>
-          {isLowStock ? 'BAIXO' : 'OK'}
-        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(produto)}
+            className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-100"
+            aria-label="Editar Produto"
+          >
+            <Edit size={20} />
+          </button>
+          <span className={`py-1 px-3 rounded-full text-xs font-bold ${isLowStock ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>
+            {isLowStock ? 'BAIXO' : 'OK'}
+          </span>
+        </div>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-4 border-t pt-4">
         <div className="text-center">
@@ -53,7 +63,8 @@ const StockRow: React.FC<{
   produto: Produto; 
   isSelected: boolean; 
   onToggleSelect: (id: string) => void;
-}> = ({ produto, isSelected, onToggleSelect }) => {
+  onEdit: (produto: Produto) => void;
+}> = ({ produto, isSelected, onToggleSelect, onEdit }) => {
   const isLowStock = produto.estoqueAtual < produto.estoqueMinimo;
   return (
     <tr className="border-b border-gray-200 hover:bg-gray-100">
@@ -80,6 +91,15 @@ const StockRow: React.FC<{
           </span>
         )}
       </td>
+      <td className="py-3 px-6 text-center">
+        <button
+          onClick={() => onEdit(produto)}
+          className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-100"
+          aria-label="Editar Produto"
+        >
+          <Edit size={20} />
+        </button>
+      </td>
     </tr>
   );
 };
@@ -95,7 +115,7 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { produtos, addEntradaEstoque } = useAppData();
     const [produtoId, setProdutoId] = useState(produtos[0]?.id || '');
     const [quantidade, setQuantidade] = useState(1);
-    const [fornecedor, setFornecedor] = useState('Fábrica Matriz');
+    const [fornecedor, setFornecedor] = useState('Congelados Maná');
     const [itensEntrada, setItensEntrada] = useState<ItemEntrada[]>([]);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [registeredItems, setRegisteredItems] = useState<ItemEntrada[]>([]);
@@ -364,7 +384,7 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             id="fornecedor" 
                             value={fornecedor} 
                             onChange={e => setFornecedor(e.target.value)} 
-                            placeholder="Ex: Fábrica Matriz..."
+                            placeholder="Ex: Congelados Maná..."
                             className="w-full p-2 sm:p-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent text-gray-900 font-medium text-sm sm:text-base"
                         />
                     </div>
@@ -412,8 +432,20 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
   const { produtos, deleteProduto } = useAppData();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [produtoToEdit, setProdutoToEdit] = useState<Produto | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleEditProduct = (produto: Produto) => {
+    setProdutoToEdit(produto);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setProdutoToEdit(null);
+  };
 
   const handleToggleSelect = (produtoId: string) => {
     setSelectedProducts(prev => {
@@ -446,6 +478,7 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
   return (
     <div className="space-y-6 p-6 pt-8">
         {isModalOpen && <AddStockModal onClose={() => setIsModalOpen(false)} />}
+        {isEditModalOpen && produtoToEdit && <EditProductModal produto={produtoToEdit} onClose={handleCloseEditModal} />}
         
         {/* Confirmation Modal */}
         {showDeleteConfirm && (
@@ -513,6 +546,7 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
                 produto={p} 
                 isSelected={selectedProducts.has(p.id)}
                 onToggleSelect={handleToggleSelect}
+                onEdit={handleEditProduct}
               />
             ))}
         </div>
@@ -536,6 +570,7 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
                         <th className="py-3 px-6 text-center">Estoque Atual</th>
                         <th className="py-3 px-6 text-center">Estoque Mínimo</th>
                         <th className="py-3 px-6 text-center">Status</th>
+                        <th className="py-3 px-6 text-center">Ações</th>
                     </tr>
                     </thead>
                     <tbody className="text-gray-600 text-sm font-light">
@@ -545,12 +580,115 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
                         produto={p} 
                         isSelected={selectedProducts.has(p.id)}
                         onToggleSelect={handleToggleSelect}
+                        onEdit={handleEditProduct}
                       />
                     ))}
                     </tbody>
                 </table>
             </div>
         </div>
+    </div>
+  );
+};
+
+
+// Modal de Edição de Produto
+const EditProductModal: React.FC<{ produto: Produto; onClose: () => void }> = ({ produto, onClose }) => {
+  const { updateProduto } = useAppData();
+  const [nome, setNome] = useState(produto.nome);
+  const [tamanhoPacote, setTamanhoPacote] = useState(produto.tamanhoPacote);
+  const [precoPadrao, setPrecoPadrao] = useState(produto.precoPadrao);
+  const [estoqueMinimo, setEstoqueMinimo] = useState(produto.estoqueMinimo);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!nome.trim()) {
+      alert('Por favor, preencha o nome do produto.');
+      return;
+    }
+
+    try {
+      await updateProduto(produto.id, {
+        nome: nome.trim(),
+        tamanhoPacote,
+        precoPadrao,
+        estoqueMinimo,
+      });
+
+      alert('Produto atualizado com sucesso!');
+      onClose();
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error);
+      alert('Erro ao atualizar produto. Tente novamente.');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white p-6 rounded-lg shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+          <Edit className="mr-2 text-blue-600" /> Editar Produto
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">Nome do Produto</label>
+            <input
+              type="text"
+              id="nome"
+              value={nome}
+              onChange={e => setNome(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="tamanhoPacote" className="block text-sm font-medium text-gray-700 mb-1">Tamanho do Pacote</label>
+            <input
+              type="text"
+              id="tamanhoPacote"
+              value={tamanhoPacote}
+              onChange={e => setTamanhoPacote(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+              placeholder="Ex: 1kg, 5kg, 500g"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="precoPadrao" className="block text-sm font-medium text-gray-700 mb-1">Preço Padrão (R$)</label>
+            <input
+              type="number"
+              id="precoPadrao"
+              value={precoPadrao}
+              onChange={e => setPrecoPadrao(parseFloat(e.target.value))}
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="estoqueMinimo" className="block text-sm font-medium text-gray-700 mb-1">Estoque Mínimo</label>
+            <input
+              type="number"
+              id="estoqueMinimo"
+              value={estoqueMinimo}
+              onChange={e => setEstoqueMinimo(parseInt(e.target.value))}
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+              min="0"
+              required
+            />
+          </div>
+          <div className="flex justify-end space-x-4 pt-4">
+            <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">
+              Cancelar
+            </button>
+            <button type="submit" className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

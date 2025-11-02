@@ -9,11 +9,25 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        proxy: {
+          '/supabase-api': {
+            target: 'https://bkwgowsumeylnwbintdz.supabase.co',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/supabase-api/, ''),
+            configure: (proxy, options) => {
+              proxy.on('proxyReq', (proxyReq, req, res) => {
+                proxyReq.setHeader('apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrd2dvd3N1bWV5bG53YmludGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxOTQyMjIsImV4cCI6MjA3NTc3MDIyMn0.zCP5mCLyHMO0ag4I11ktRoPEGo_mPAGWP8idLMIwIFU');
+              });
+            }
+          }
+        }
       },
       plugins: [
         react(),
         VitePWA({
           registerType: 'autoUpdate',
+          injectRegister: false, // Desabilitar registro automático
+          selfDestroying: true, // Remover SW existente
           includeAssets: ['favicon.svg', 'favicon.ico', 'icon-192.svg', 'icon-512.svg'],
           manifest: {
             name: 'Maná - Gestão de Produtos',
@@ -42,6 +56,7 @@ export default defineConfig(({ mode }) => {
           },
           workbox: {
             globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+            navigateFallbackDenylist: [/^\/api/, /supabase\.co/],
             runtimeCaching: [
               {
                 urlPattern: /^https:\/\/cdn\.tailwindcss\.com\/.*/i,
@@ -69,6 +84,14 @@ export default defineConfig(({ mode }) => {
                   cacheableResponse: {
                     statuses: [0, 200]
                   }
+                }
+              },
+              {
+                urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+                handler: 'NetworkOnly',
+                options: {
+                  cacheName: 'supabase-api',
+                  networkTimeoutSeconds: 10
                 }
               }
             ]

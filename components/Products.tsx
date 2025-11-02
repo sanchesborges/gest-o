@@ -27,8 +27,8 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             return;
         }
         
-        // Se for 5kg, adicionar a gramatura ao tamanho do pacote
-        const tamanhoFinal = tamanhoPacote === TamanhoPacote.CINCO_KG 
+        // Se for 5kg, adicionar a gramatura ao tamanho do pacote (se houver)
+        const tamanhoFinal = tamanhoPacote === TamanhoPacote.CINCO_KG && gramatura
             ? `${tamanhoPacote} (${gramatura})` 
             : tamanhoPacote;
         
@@ -92,6 +92,7 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 onChange={e => setGramatura(e.target.value)} 
                                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                             >
+                                <option value="">Sem gramatura</option>
                                 <option value="25g">25 Gramas</option>
                                 <option value="30g">30 Gramas</option>
                                 <option value="40g">40 Gramas</option>

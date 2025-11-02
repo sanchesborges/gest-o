@@ -11,6 +11,7 @@ interface AppDataContextType {
   pagamentos: Pagamento[];
   entregadores: Entregador[];
   addProduto: (produto: Omit<Produto, 'id' | 'estoqueAtual'>) => Promise<void>;
+  updateProduto: (produtoId: string, produtoData: Partial<Omit<Produto, 'id'>>) => Promise<void>;
   deleteProduto: (produtoId: string) => Promise<void>;
   addCliente: (cliente: Omit<Cliente, 'id'>) => Promise<void>;
   addPedido: (pedido: Omit<Pedido, 'id'>) => Promise<void>;
@@ -309,6 +310,57 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       saveToStorage('produtos', [...produtos, newProduto]);
       setProdutos(prev => [...prev, newProduto]);
       alert(`Erro inesperado ao salvar produto. Verifique o console para mais detalhes.`);
+    }
+  };
+
+  const updateProduto = async (produtoId: string, produtoData: Partial<Omit<Produto, 'id'>>) => {
+    const produtoAtual = produtos.find(p => p.id === produtoId);
+    if (!produtoAtual) {
+      console.error('❌ Produto não encontrado:', produtoId);
+      return;
+    }
+
+    console.log('✏️ Tentando atualizar produto:', produtoAtual.nome);
+    console.log('   Dados novos:', produtoData);
+
+    try {
+      // Preparar dados para o Supabase (converter camelCase para snake_case)
+      const updateData: any = {};
+      if (produtoData.nome !== undefined) updateData.nome = produtoData.nome;
+      if (produtoData.tipo !== undefined) updateData.tipo = produtoData.tipo;
+      if (produtoData.tamanhoPacote !== undefined) updateData.tamanho_pacote = produtoData.tamanhoPacote;
+      if (produtoData.precoPadrao !== undefined) updateData.preco_padrao = produtoData.precoPadrao;
+      if (produtoData.estoqueMinimo !== undefined) updateData.estoque_minimo = produtoData.estoqueMinimo;
+      if (produtoData.estoqueAtual !== undefined) updateData.estoque_atual = produtoData.estoqueAtual;
+
+      const { data, error } = await supabase
+        .from('produtos')
+        .update(updateData)
+        .eq('id', produtoId)
+        .select();
+
+      if (error) {
+        console.error('❌ ERRO ao atualizar produto no Supabase:', error);
+        alert(`Erro ao atualizar produto: ${error.message}`);
+        return;
+      }
+
+      console.log('✅ Produto atualizado com sucesso no Supabase:', data);
+
+      // Atualizar estado local
+      setProdutos(prev => prev.map(p => 
+        p.id === produtoId ? { ...p, ...produtoData } : p
+      ));
+
+      // Atualizar localStorage
+      const updatedProdutos = produtos.map(p => 
+        p.id === produtoId ? { ...p, ...produtoData } : p
+      );
+      saveToStorage('produtos', updatedProdutos);
+
+    } catch (error) {
+      console.error('❌ Exceção ao atualizar produto:', error);
+      alert(`Erro inesperado ao atualizar produto. Verifique o console para mais detalhes.`);
     }
   };
 
@@ -845,6 +897,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     pagamentos,
     entregadores,
     addProduto,
+    updateProduto,
     deleteProduto,
     addCliente,
     addPedido,

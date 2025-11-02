@@ -63,21 +63,41 @@
   <body>
     <noscript>Você precisa habilitar o JavaScript para rodar este aplicativo.</noscript>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    
+    <!-- REMOVER SERVICE WORKER QUE ESTÁ CAUSANDO PROBLEMAS -->
     <script>
-      // Service Worker desabilitado temporariamente para evitar problemas com módulos ES6
-      // Descomente quando tiver um build de produção
-      /*
+      console.log('🧹 Verificando Service Workers...');
+      
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(registration => {
-            console.log('ServiceWorker registered: ', registration);
-          }).catch(registrationError => {
-            console.log('ServiceWorker registration failed: ', registrationError);
-          });
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          if (registrations.length > 0) {
+            console.log('⚠️ Service Workers encontrados:', registrations.length);
+            for(let registration of registrations) {
+              registration.unregister().then(function(success) {
+                if (success) {
+                  console.log('✅ Service Worker removido');
+                }
+              });
+            }
+          } else {
+            console.log('✅ Nenhum Service Worker ativo');
+          }
         });
       }
-      */
+      
+      // Limpar caches antigos
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          if (names.length > 0) {
+            console.log('🗑️ Limpando', names.length, 'caches...');
+            for (let name of names) {
+              caches.delete(name);
+            }
+          }
+        });
+      }
     </script>
+    
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
