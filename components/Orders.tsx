@@ -30,7 +30,7 @@ const AssignDriverModal: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ 
     const cliente = clientes.find(c => c.id === pedido.clienteId);
     const [selectedEntregadorId, setSelectedEntregadorId] = useState<string>(pedido.entregadorId || (entregadores.length > 0 ? entregadores[0].id : ''));
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedEntregadorId) {
             alert("Por favor, selecione um entregador.");
@@ -38,7 +38,7 @@ const AssignDriverModal: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ 
         }
 
         // 1. Assign the driver to the order in the system
-        assignEntregador(pedido.id, selectedEntregadorId);
+        await assignEntregador(pedido.id, selectedEntregadorId);
 
         // 2. Prepare the message for WhatsApp
         const entregadorSelecionado = entregadores.find(e => e.id === selectedEntregadorId);
@@ -48,9 +48,9 @@ const AssignDriverModal: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ 
             return `- ${item.quantidade}x ${produto?.nome || 'N/A'}`;
         }).join('%0A');
 
-        // 3. Generate the delivery portal link with the driver's ID
+        // 3. Generate the delivery portal link with the driver's ID and order ID
         const currentOrigin = window.location.origin;
-        const deliveryPortalLink = `${currentOrigin}/#/entregador/${selectedEntregadorId}`;
+        const deliveryPortalLink = `${currentOrigin}/#/entregador/${selectedEntregadorId}?pedido=${pedido.id}`;
 
         const message = `*NOVA ENTREGA ATRIBUÍDA - MANÁ*%0A%0A` +
             `Olá, *${entregadorSelecionado?.nome.split(' ')[0]}*! Você tem uma nova entrega.%0A%0A` +
@@ -63,9 +63,9 @@ const AssignDriverModal: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ 
             `💰 *Valor Total a Receber:* R$ ${pedido.valorTotal.toFixed(2)}%0A` +
             `💳 *Condição de Pagamento:* ${cliente?.condicaoPagamento}%0A%0A` +
             `━━━━━━━━━━━━━━━━━━━━%0A` +
-            `🔗 *ACESSE SEU PORTAL DE ENTREGAS:*%0A` +
+            `📱 *CLIQUE PARA ABRIR A NOTA DE ENTREGA:*%0A` +
             `${deliveryPortalLink}%0A%0A` +
-            `_Clique no link acima para ver seus pedidos e coletar assinaturas._`;
+            `_Clique no link acima para ver os detalhes deste pedido e coletar a assinatura do cliente._`;
 
         // 4. Create the WhatsApp link with the driver's phone number
         if (!entregadorSelecionado?.telefone) {
@@ -78,10 +78,13 @@ const AssignDriverModal: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ 
         const encodedMessage = encodeURIComponent(message.replace(/%0A/g, '\n'));
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
-        window.open(whatsappUrl, '_blank');
-
-        // 5. Close the modal
+        // 5. Close the modal first
         onClose();
+        
+        // 6. Wait a moment to ensure database is updated, then open WhatsApp
+        setTimeout(() => {
+            window.open(whatsappUrl, '_blank');
+        }, 500);
     };
 
 
@@ -127,13 +130,14 @@ const OrderCard: React.FC<{
     userRole: UserRole;
     isSelected: boolean;
     onToggleSelect: (id: string) => void;
-}> = ({ pedido, onOpenNote, onOpenAssign, userRole, isSelected, onToggleSelect }) => {
+    isHighlighted?: boolean;
+}> = ({ pedido, onOpenNote, onOpenAssign, userRole, isSelected, onToggleSelect, isHighlighted }) => {
     const { clientes, entregadores } = useAppData();
     const cliente = clientes.find(c => c.id === pedido.clienteId);
     const entregador = entregadores.find(e => e.id === pedido.entregadorId);
 
     return (
-        <div className="bg-white rounded-2xl shadow-lg p-5 mb-4 transform hover:scale-105 transition-transform duration-300">
+        <div className={`bg-white rounded-2xl shadow-lg p-5 mb-4 transform hover:scale-105 transition-transform duration-300 ${isHighlighted ? 'ring-4 ring-yellow-400 animate-pulse' : ''}`}>
             <div className="flex justify-between items-start">
                 <div className="flex items-start gap-3 flex-1">
                     {userRole === UserRole.ADMIN && (
@@ -201,13 +205,14 @@ const OrderRow: React.FC<{
     userRole: UserRole;
     isSelected: boolean;
     onToggleSelect: (id: string) => void;
-}> = ({ pedido, onOpenNote, onOpenAssign, userRole, isSelected, onToggleSelect }) => {
+    isHighlighted?: boolean;
+}> = ({ pedido, onOpenNote, onOpenAssign, userRole, isSelected, onToggleSelect, isHighlighted }) => {
     const { clientes, entregadores } = useAppData();
     const cliente = clientes.find(c => c.id === pedido.clienteId);
     const entregador = entregadores.find(e => e.id === pedido.entregadorId);
 
     return (
-        <tr className="border-b border-gray-200 hover:bg-gray-100">
+        <tr className={`border-b border-gray-200 hover:bg-gray-100 ${isHighlighted ? 'bg-yellow-100 animate-pulse' : ''}`}>
             {userRole === UserRole.ADMIN && (
                 <td className="py-3 px-6 text-center">
                     <input
@@ -246,7 +251,7 @@ const OrderRow: React.FC<{
 };
 
 export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
-    const { pedidos, clientes, deletePedido } = useAppData();
+    const { pedidos, clientes, deletePedido, reloadPedidos } = useAppData();
     const { entregadorId } = useParams<{ entregadorId: string }>();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isNoteOpen, setIsNoteOpen] = useState(false);
@@ -259,10 +264,56 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
     const [statusFilter, setStatusFilter] = useState<StatusPedido | 'Todos'>('Todos');
     const [clientFilter, setClientFilter] = useState<string>('Todos');
 
+    // Debug: Log quando os dados mudarem
+    React.useEffect(() => {
+        console.log('🔍 Orders - Dados atualizados:', {
+            totalPedidos: pedidos.length,
+            totalClientes: clientes.length,
+            userRole,
+            entregadorId
+        });
+    }, [pedidos, clientes, userRole, entregadorId]);
+    
+    // Get pedido ID from URL query params
+    const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
+    const highlightPedidoId = urlParams.get('pedido');
+    const [showHighlightMessage, setShowHighlightMessage] = useState(!!highlightPedidoId);
+
     const isEntregadorView = userRole === UserRole.ENTREGADOR;
+    
+    // Reload pedidos when entregador opens the page with a highlighted order
+    React.useEffect(() => {
+        if (isEntregadorView && entregadorId && highlightPedidoId) {
+            console.log('🔄 Entregador acessou com pedido destacado, recarregando dados...');
+            reloadPedidos();
+        }
+    }, [isEntregadorView, entregadorId, highlightPedidoId, reloadPedidos]);
+
+    // Auto-open delivery note when entregador accesses via link
+    React.useEffect(() => {
+        if (isEntregadorView && highlightPedidoId && pedidos.length > 0) {
+            const pedido = pedidos.find(p => p.id === highlightPedidoId);
+            if (pedido && !isNoteOpen) {
+                console.log('📋 Abrindo nota de entrega automaticamente para pedido:', highlightPedidoId);
+                setSelectedOrder(pedido);
+                setIsNoteOpen(true);
+            }
+        }
+    }, [isEntregadorView, highlightPedidoId, pedidos, isNoteOpen]);
+    
+    // Auto-hide highlight message after 5 seconds
+    React.useEffect(() => {
+        if (showHighlightMessage) {
+            const timer = setTimeout(() => setShowHighlightMessage(false), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [showHighlightMessage]);
 
     const initialPedidos = isEntregadorView && entregadorId
-        ? pedidos.filter(p => p.entregadorId === entregadorId)
+        ? pedidos.filter(p => {
+            console.log('Filtrando pedido:', p.id, 'entregadorId do pedido:', p.entregadorId, 'entregadorId da URL:', entregadorId, 'Match:', p.entregadorId === entregadorId);
+            return p.entregadorId === entregadorId;
+          })
         : pedidos;
 
     const handleToggleSelect = (pedidoId: string) => {
@@ -346,6 +397,13 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                             </button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {showHighlightMessage && highlightPedidoId && (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg shadow-md mb-4 animate-pulse">
+                    <p className="font-bold">🎯 Nova Entrega Atribuída!</p>
+                    <p className="text-sm">Pedido #{highlightPedidoId.toUpperCase()} destacado abaixo</p>
                 </div>
             )}
 
@@ -437,6 +495,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                                 userRole={userRole}
                                 isSelected={selectedOrders.has(p.id)}
                                 onToggleSelect={handleToggleSelect}
+                                isHighlighted={highlightPedidoId === p.id}
                             />
                         ))}
                     </div>
@@ -477,6 +536,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                                             userRole={userRole}
                                             isSelected={selectedOrders.has(p.id)}
                                             onToggleSelect={handleToggleSelect}
+                                            isHighlighted={highlightPedidoId === p.id}
                                         />
                                     ))}
                                 </tbody>
