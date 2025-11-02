@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { UserPlus, X, Bike, UserCheck, Phone, Share2, Check, MessageCircle, Trash2 } from 'lucide-react';
+import { UserPlus, X, Bike, UserCheck, Phone, MessageCircle, Trash2 } from 'lucide-react';
 import { StatusPedido } from '../types';
 
 const AddEntregadorModal: React.FC<{ onClose: () => void, onAdd: (data: { nome: string, telefone: string, avatarUrl?: string }) => void }> = ({ onClose, onAdd }) => {
@@ -144,7 +144,6 @@ const AddEntregadorModal: React.FC<{ onClose: () => void, onAdd: (data: { nome: 
 export const Entregadores: React.FC = () => {
     const { entregadores, pedidos, clientes, addEntregador, deleteEntregador } = useAppData();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const handleAddEntregador = async (data: { nome: string; telefone: string; avatarUrl?: string }) => {
         await addEntregador(data);
@@ -157,32 +156,6 @@ export const Entregadores: React.FC = () => {
         
         if (confirmar) {
             await deleteEntregador(entregadorId);
-        }
-    };
-    
-    const handleShare = async (entregadorId: string, entregadorNome: string) => {
-        const link = `${window.location.origin}/%23/entregador/${entregadorId}`;
-
-        const shareData = {
-            title: `Acesso de Entregador - Maná`,
-            text: `Olá, ${entregadorNome.split(' ')[0]}! Acesse seu portal de entregas aqui:`,
-            url: link,
-        };
-
-        if (navigator.share) {
-            try {
-                await navigator.share(shareData);
-            } catch (err) {
-                console.error("Erro ao compartilhar:", err);
-            }
-        } else {
-            navigator.clipboard.writeText(link).then(() => {
-                setCopiedId(entregadorId);
-                setTimeout(() => setCopiedId(null), 2000);
-            }).catch(err => {
-                console.error("Erro ao copiar:", err);
-                alert("Não foi possível copiar o link.");
-            });
         }
     };
 
@@ -289,40 +262,25 @@ export const Entregadores: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-2 pt-3 border-t">
+                            <div className="pt-3 border-t">
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => handleShareWhatsApp(entregador)}
                                         className="flex-1 bg-green-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-green-700 transition-colors text-sm"
                                     >
-                                        <MessageCircle size={16} className="mr-2" />
-                                        WhatsApp
+                                        <MessageCircle size={16} className="mr-1 sm:mr-2" />
+                                        <span className="hidden sm:inline">Enviar Link via WhatsApp</span>
+                                        <span className="sm:hidden">WhatsApp</span>
                                     </button>
                                     <button
-                                        onClick={() => handleShare(entregador.id, entregador.nome)}
-                                        className="flex-1 bg-indigo-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors text-sm"
+                                        onClick={() => handleDeleteEntregador(entregador.id, entregador.nome)}
+                                        className="flex-1 bg-red-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-red-700 transition-colors text-sm"
+                                        title="Excluir entregador"
                                     >
-                                        {copiedId === entregador.id ? (
-                                            <>
-                                                <Check size={16} className="mr-2" />
-                                                Copiado!
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Share2 size={16} className="mr-2" />
-                                                Copiar Link
-                                            </>
-                                        )}
+                                        <Trash2 size={16} className="mr-1 sm:mr-2" />
+                                        Excluir
                                     </button>
                                 </div>
-                                <button
-                                    onClick={() => handleDeleteEntregador(entregador.id, entregador.nome)}
-                                    className="w-full bg-red-600 text-white font-bold py-2 px-3 rounded-lg flex items-center justify-center hover:bg-red-700 transition-colors text-sm"
-                                    title="Excluir entregador"
-                                >
-                                    <Trash2 size={16} className="mr-2" />
-                                    Excluir
-                                </button>
                             </div>
                         </div>
                     );
