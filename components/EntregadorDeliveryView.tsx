@@ -16,6 +16,39 @@ export const EntregadorDeliveryView: React.FC = () => {
 
   console.log('📱 EntregadorDeliveryView carregado:', { entregadorId, pedidoId });
 
+  // Corrigir dimensões do canvas de assinatura
+  React.useEffect(() => {
+    const resizeCanvas = () => {
+      const canvas = sigCanvas.current?.getCanvas();
+      if (canvas) {
+        const container = canvas.parentElement;
+        if (container) {
+          // Definir dimensões reais do canvas
+          const width = container.clientWidth;
+          const height = 192; // h-48 = 12rem = 192px
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Limpar canvas após redimensionar
+          sigCanvas.current?.clear();
+        }
+      }
+    };
+
+    // Redimensionar ao carregar
+    setTimeout(resizeCanvas, 100);
+
+    // Redimensionar ao mudar orientação ou tamanho da tela
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', resizeCanvas);
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('orientationchange', resizeCanvas);
+    };
+  }, []);
+
   const pedido = pedidos.find(p => p.id === pedidoId);
   const cliente = pedido ? clientes.find(c => c.id === pedido.clienteId) : null;
 
@@ -364,15 +397,21 @@ export const EntregadorDeliveryView: React.FC = () => {
             </>
           ) : (
             <>
-              <div className="relative w-full border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm">
+              <div className="relative w-full border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 overflow-hidden">
+                <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm z-10">
                   Assine aqui com o dedo
                 </p>
                 <SignatureCanvas 
                   ref={sigCanvas} 
-                  penColor='black' 
+                  penColor='black'
+                  backgroundColor='transparent'
                   canvasProps={{
-                    className: 'w-full h-48 bg-transparent rounded-lg touch-action-none'
+                    className: 'w-full h-48 bg-transparent rounded-lg',
+                    style: {
+                      touchAction: 'none',
+                      width: '100%',
+                      height: '192px'
+                    }
                   }} 
                 />
               </div>
