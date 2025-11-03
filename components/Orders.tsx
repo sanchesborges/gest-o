@@ -326,10 +326,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
     }, [showHighlightMessage]);
 
     const initialPedidos = isEntregadorView && entregadorId
-        ? pedidos.filter(p => {
-            console.log('Filtrando pedido:', p.id, 'entregadorId do pedido:', p.entregadorId, 'entregadorId da URL:', entregadorId, 'Match:', p.entregadorId === entregadorId);
-            return p.entregadorId === entregadorId;
-          })
+        ? pedidos.filter(p => p.entregadorId === entregadorId)
         : pedidos;
 
     const handleToggleSelect = (pedidoId: string) => {
