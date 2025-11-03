@@ -14,6 +14,7 @@ interface AppDataContextType {
   updateProduto: (produtoId: string, produtoData: Partial<Omit<Produto, 'id'>>) => Promise<void>;
   deleteProduto: (produtoId: string) => Promise<void>;
   addCliente: (cliente: Omit<Cliente, 'id'>) => Promise<void>;
+  updateCliente: (clienteId: string, clienteData: Partial<Omit<Cliente, 'id'>>) => Promise<void>;
   addPedido: (pedido: Omit<Pedido, 'id'>) => Promise<void>;
   deletePedido: (pedidoId: string) => Promise<void>;
   addEntradaEstoque: (entrada: Omit<EntradaEstoque, 'id'>) => Promise<void>;
@@ -440,6 +441,34 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.error('Erro ao adicionar cliente:', error);
       saveToStorage('clientes', [...clientes, newCliente]);
       setClientes(prev => [...prev, newCliente]);
+    }
+  };
+
+  const updateCliente = async (clienteId: string, clienteData: Partial<Omit<Cliente, 'id'>>) => {
+    try {
+      const updateData: any = {};
+      if (clienteData.nome !== undefined) updateData.nome = clienteData.nome;
+      if (clienteData.tipo !== undefined) updateData.tipo = clienteData.tipo;
+      if (clienteData.endereco !== undefined) updateData.endereco = clienteData.endereco;
+      if (clienteData.telefone !== undefined) updateData.telefone = clienteData.telefone;
+      if (clienteData.condicaoPagamento !== undefined) updateData.condicao_pagamento = clienteData.condicaoPagamento;
+
+      const { error } = await supabase
+        .from('clientes')
+        .update(updateData)
+        .eq('id', clienteId);
+
+      if (error) {
+        console.error('Erro ao atualizar cliente:', error);
+        throw error;
+      }
+
+      setClientes(prev => prev.map(c => 
+        c.id === clienteId ? { ...c, ...clienteData } : c
+      ));
+    } catch (error) {
+      console.error('Erro ao atualizar cliente:', error);
+      alert('Erro ao atualizar cliente. Tente novamente.');
     }
   };
 
@@ -987,6 +1016,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     updateProduto,
     deleteProduto,
     addCliente,
+    updateCliente,
     addPedido,
     deletePedido,
     addEntradaEstoque,
