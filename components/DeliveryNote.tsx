@@ -14,15 +14,33 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
   
   // Prevenir scroll do body quando modal está aberto
   useEffect(() => {
-    const originalStyle = window.getComputedStyle(document.body).overflow;
+    console.log('🔵 DeliveryNote montado - Modal aberto');
+    
+    const originalOverflow = document.body.style.overflow;
+    const originalPosition = document.body.style.position;
+    const originalWidth = document.body.style.width;
+    const originalTop = document.body.style.top;
+    
+    // Salvar posição atual do scroll
+    const scrollY = window.scrollY;
+    
+    // Aplicar estilos para bloquear scroll
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
     document.body.style.width = '100%';
     
     return () => {
-      document.body.style.overflow = originalStyle;
-      document.body.style.position = '';
-      document.body.style.width = '';
+      console.log('🔴 DeliveryNote desmontado - Modal fechado');
+      
+      // Restaurar estilos
+      document.body.style.overflow = originalOverflow;
+      document.body.style.position = originalPosition;
+      document.body.style.top = originalTop;
+      document.body.style.width = originalWidth;
+      
+      // Restaurar posição do scroll
+      window.scrollTo(0, scrollY);
     };
   }, []);
   
@@ -243,9 +261,29 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
     onClose();
   };
 
+  // Log de renderização
+  console.log('🎨 DeliveryNote renderizando para pedido:', pedido.id, {
+    clienteNome: cliente?.nome,
+    itensCount: pedido.itens.length,
+    windowSize: { width: window.innerWidth, height: window.innerHeight }
+  });
+
   return (
-    <div className="modal-overlay fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 overflow-hidden" onClick={onClose}>
-      <div className="modal-content bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300 relative" onClick={e => e.stopPropagation()}>
+    <div 
+      className="modal-overlay fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 overflow-hidden" 
+      onClick={onClose}
+      style={{ 
+        zIndex: 9999,
+        touchAction: 'none'
+      }}
+    >
+      <div 
+        className="modal-content bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300 relative" 
+        onClick={e => e.stopPropagation()}
+        style={{
+          maxWidth: window.innerWidth < 768 ? '95vw' : '56rem'
+        }}
+      >
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b bg-gray-50 rounded-t-xl relative">
             <div className="flex items-center">

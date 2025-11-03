@@ -292,13 +292,40 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
     // Auto-open delivery note when entregador accesses via link
     const hasAutoOpened = React.useRef(false);
     React.useEffect(() => {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        console.log('🔍 Verificando abertura automática:', {
+            isEntregadorView,
+            highlightPedidoId,
+            pedidosLength: pedidos.length,
+            hasAutoOpened: hasAutoOpened.current,
+            isMobile,
+            userAgent: navigator.userAgent
+        });
+        
         if (isEntregadorView && highlightPedidoId && pedidos.length > 0 && !hasAutoOpened.current) {
             const pedido = pedidos.find(p => p.id === highlightPedidoId);
+            console.log('🔎 Pedido encontrado:', pedido ? 'SIM' : 'NÃO', pedido?.id);
+            
             if (pedido) {
-                console.log('📋 Abrindo nota de entrega automaticamente para pedido:', highlightPedidoId);
-                setSelectedOrder(pedido);
-                setIsNoteOpen(true);
-                hasAutoOpened.current = true;
+                // Delay maior no mobile para garantir que tudo carregou
+                const delay = isMobile ? 500 : 300;
+                
+                console.log(`⏱️ Aguardando ${delay}ms antes de abrir modal...`);
+                
+                setTimeout(() => {
+                    console.log('📋 Abrindo nota de entrega automaticamente para pedido:', highlightPedidoId);
+                    setSelectedOrder(pedido);
+                    setIsNoteOpen(true);
+                    hasAutoOpened.current = true;
+                    
+                    // Forçar scroll para o topo no mobile
+                    if (isMobile) {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }, delay);
+            } else {
+                console.warn('⚠️ Pedido não encontrado na lista. Pedidos disponíveis:', pedidos.map(p => p.id));
             }
         }
     }, [isEntregadorView, highlightPedidoId, pedidos]);
@@ -367,6 +394,15 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
         const clientMatch = clientFilter === 'Todos' || pedido.clienteId === clientFilter;
         return statusMatch && clientMatch;
     }).sort((a, b) => b.data.getTime() - a.data.getTime());
+
+    // Log para debug de renderização do modal
+    if (isNoteOpen && selectedOrder) {
+        console.log('✅ Renderizando DeliveryNote:', {
+            isNoteOpen,
+            selectedOrderId: selectedOrder.id,
+            isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+        });
+    }
 
     return (
         <div className="space-y-6 p-6 pt-8">

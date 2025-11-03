@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Modal Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #4F46E5;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button:active {
+            background: #4338CA;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #4F46E5;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .close-btn {
+            background: #EF4444;
+        }
+
+        .log {
+            background: #1F2937;
+            color: #10B981;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Modal no Mobile</h1>
+    
+    <div class="info">
+        <strong>Dispositivo:</strong> <span id="device"></span><br>
+        <strong>Navegador:</strong> <span id="browser"></span><br>
+        <strong>Tela:</strong> <span id="screen"></span><br>
+        <strong>É Mobile:</strong> <span id="isMobile"></span>
+    </div>
+
+    <button onclick="openModal()">🚀 Abrir Modal</button>
+    <button onclick="testAutoOpen()">⚡ Simular Abertura Automática</button>
+    <button onclick="clearLogs()">🗑️ Limpar Logs</button>
+
+    <div id="logs" class="log"></div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">✅ Modal Funcionando!</div>
+            <div class="modal-body">
+                <p>Se você está vendo isso, o modal está funcionando corretamente no seu dispositivo.</p>
+                <p style="margin-top: 10px;"><strong>Teste:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 5px;">
+                    <li>O modal apareceu?</li>
+                    <li>Você consegue rolar o conteúdo?</li>
+                    <li>O fundo está escurecido?</li>
+                    <li>Consegue fechar clicando fora?</li>
+                </ul>
+            </div>
+            <button class="close-btn" onclick="closeModal()">Fechar Modal</button>
+        </div>
+    </div>
+
+    <script>
+        // Detectar dispositivo
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        document.getElementById('device').textContent = isMobile ? '📱 Mobile' : '💻 Desktop';
+        document.getElementById('browser').textContent = navigator.userAgent.split(' ').pop();
+        document.getElementById('screen').textContent = `${window.innerWidth}x${window.innerHeight}`;
+        document.getElementById('isMobile').textContent = isMobile ? 'SIM' : 'NÃO';
+
+        // Função de log
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const emoji = type === 'error' ? '❌' : type === 'success' ? '✅' : '📝';
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${timestamp}] ${emoji} ${message}`;
+            logsDiv.appendChild(entry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // Abrir modal
+        function openModal() {
+            log('Tentando abrir modal...', 'info');
+            const modal = document.getElementById('modal');
+            modal.classList.add('active');
+            log('Modal aberto com sucesso!', 'success');
+            
+            // Bloquear scroll do body
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
+            log('Scroll do body bloqueado', 'info');
+        }
+
+        // Fechar modal
+        function closeModal() {
+            log('Fechando modal...', 'info');
+            const modal = document.getElementById('modal');
+            modal.classList.remove('active');
+            
+            // Restaurar scroll do body
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+            log('Modal fechado e scroll restaurado', 'success');
+        }
+
+        // Simular abertura automática (como no sistema)
+        function testAutoOpen() {
+            log('🔄 Simulando abertura automática...', 'info');
+            log(`Delay: ${isMobile ? '500ms' : '300ms'}`, 'info');
+            
+            const delay = isMobile ? 500 : 300;
+            
+            setTimeout(() => {
+                log('⏱️ Delay concluído, abrindo modal...', 'info');
+                openModal();
+            }, delay);
+        }
+
+        // Limpar logs
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            log('Logs limpos', 'info');
+        }
+
+        // Log inicial
+        log('Página carregada', 'success');
+        log(`Dispositivo: ${isMobile ? 'Mobile' : 'Desktop'}`, 'info');
+        log(`Tela: ${window.innerWidth}x${window.innerHeight}`, 'info');
+
+        // Simular abertura automática se tiver parâmetro na URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto') === 'true') {
+            log('🎯 Parâmetro auto=true detectado', 'info');
+            testAutoOpen();
+        }
+    </script>
+</body>
+</html>
