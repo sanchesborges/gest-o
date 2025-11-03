@@ -36,3 +36,24 @@ body {
 .animate-slide-up {
     animation: slide-up 0.3s ease-out;
 }
+
+/* Garantir que modais funcionem bem no mobile */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prevenir problemas de scroll em iOS */
+.modal-content {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* Garantir que o canvas de assinatura funcione no mobile */
+canvas {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}

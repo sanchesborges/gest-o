@@ -290,16 +290,18 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
     }, [isEntregadorView, entregadorId, highlightPedidoId, reloadPedidos]);
 
     // Auto-open delivery note when entregador accesses via link
+    const hasAutoOpened = React.useRef(false);
     React.useEffect(() => {
-        if (isEntregadorView && highlightPedidoId && pedidos.length > 0) {
+        if (isEntregadorView && highlightPedidoId && pedidos.length > 0 && !hasAutoOpened.current) {
             const pedido = pedidos.find(p => p.id === highlightPedidoId);
-            if (pedido && !isNoteOpen) {
+            if (pedido) {
                 console.log('📋 Abrindo nota de entrega automaticamente para pedido:', highlightPedidoId);
                 setSelectedOrder(pedido);
                 setIsNoteOpen(true);
+                hasAutoOpened.current = true;
             }
         }
-    }, [isEntregadorView, highlightPedidoId, pedidos, isNoteOpen]);
+    }, [isEntregadorView, highlightPedidoId, pedidos]);
     
     // Auto-hide highlight message after 5 seconds
     React.useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Pedido, StatusPedido } from '../types';
 import { useAppData } from '../hooks/useAppData';
 import SignatureCanvas from 'react-signature-canvas';
@@ -12,13 +12,23 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
   const noteRef = useRef<HTMLDivElement>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   
+  // Prevenir scroll do body quando modal está aberto
+  useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    
+    return () => {
+      document.body.style.overflow = originalStyle;
+      document.body.style.position = '';
+      document.body.style.width = '';
+    };
+  }, []);
+  
   const clearSignature = () => {
     sigCanvas.current?.clear();
   };
-
-  const isSignatureCanvasEmpty = () => {
-    return !sigCanvas.current || sigCanvas.current.isEmpty();
-  }
 
   const generatePdfInstance = (): jsPDF => {
     const pdf = new jsPDF();
@@ -183,8 +193,6 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
   };
 
   const handleShareWhatsApp = async () => {
-    const telefone = cliente?.telefone?.replace(/\D/g, '');
-    
     const itemsText = pedido.itens.map(item => {
       const produto = produtos.find(p => p.id === item.produtoId);
       return `${produto?.nome || 'N/A'} - ${item.quantidade}x R$ ${item.precoUnitario.toFixed(2)} = R$ ${(item.quantidade * item.precoUnitario).toFixed(2)}`;
@@ -197,11 +205,10 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
                     `*Endereço:* ${cliente?.endereco}%0A%0A` +
                     `*ITENS:*%0A${itemsText}%0A%0A` +
                     `*VALOR TOTAL: R$ ${pedido.valorTotal.toFixed(2)}*%0A%0A` +
-                    `_Obrigado pela preferência!_`;
+                    `_Pedido gerado pelo sistema SB_`;
 
-    const whatsappUrl = telefone 
-      ? `https://wa.me/55${telefone}?text=${message}`
-      : `https://wa.me/?text=${message}`;
+    // Sempre abre sem número específico para permitir escolher o contato
+    const whatsappUrl = `https://wa.me/?text=${message}`;
     
     window.open(whatsappUrl, '_blank');
   };
@@ -237,8 +244,8 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300" onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 overflow-hidden" onClick={onClose}>
+      <div className="modal-content bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300 relative" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b bg-gray-50 rounded-t-xl relative">
             <div className="flex items-center">
@@ -251,7 +258,7 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
         </div>
 
         {/* Content */}
-        <div className="flex-grow overflow-y-auto bg-gray-100 p-4" id="note-scroll-container">
+        <div className="flex-grow overflow-y-auto bg-gray-100 p-4 overscroll-contain -webkit-overflow-scrolling-touch" id="note-scroll-container">
             <div ref={noteRef} className="space-y-4 bg-white p-6 rounded-lg shadow-lg min-h-full">
                 {/* Cabeçalho da Nota */}
                 <div className="text-center border-b-2 border-indigo-600 pb-4 mb-4">
