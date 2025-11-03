@@ -6,7 +6,7 @@ import { Pedido, StatusPedido, StatusPagamento, UserRole } from '../types';
 import { OrderForm } from './OrderForm';
 import { DeliveryNote } from './DeliveryNote';
 import { FactoryOrders } from './FactoryOrders';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const getStatusColor = (status: StatusPedido) => {
     switch (status) {
@@ -50,7 +50,7 @@ const AssignDriverModal: React.FC<{ pedido: Pedido; onClose: () => void }> = ({ 
 
         // 3. Generate the delivery portal link with the driver's ID and order ID
         const currentOrigin = window.location.origin;
-        const deliveryPortalLink = `${currentOrigin}/#/entregador/${selectedEntregadorId}?pedido=${pedido.id}`;
+        const deliveryPortalLink = `${currentOrigin}/#/entregador/${selectedEntregadorId}/entrega/${pedido.id}`;
 
         const message = `*NOVA ENTREGA ATRIBUÍDA - MANÁ*%0A%0A` +
             `Olá, *${entregadorSelecionado?.nome.split(' ')[0]}*! Você tem uma nova entrega.%0A%0A` +
@@ -253,6 +253,7 @@ const OrderRow: React.FC<{
 export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
     const { pedidos, clientes, deletePedido, reloadPedidos } = useAppData();
     const { entregadorId } = useParams<{ entregadorId: string }>();
+    const navigate = useNavigate();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isNoteOpen, setIsNoteOpen] = useState(false);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -289,46 +290,30 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
         }
     }, [isEntregadorView, entregadorId, highlightPedidoId, reloadPedidos]);
 
-    // Auto-open delivery note when entregador accesses via link
-    const hasAutoOpened = React.useRef(false);
+    // Auto-redirect to delivery page when entregador accesses via link
+    const hasAutoRedirected = React.useRef(false);
     React.useEffect(() => {
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        
-        console.log('🔍 Verificando abertura automática:', {
+        console.log('🔍 Verificando redirecionamento automático:', {
             isEntregadorView,
             highlightPedidoId,
             pedidosLength: pedidos.length,
-            hasAutoOpened: hasAutoOpened.current,
-            isMobile,
-            userAgent: navigator.userAgent
+            hasAutoRedirected: hasAutoRedirected.current,
+            entregadorId
         });
         
-        if (isEntregadorView && highlightPedidoId && pedidos.length > 0 && !hasAutoOpened.current) {
+        if (isEntregadorView && highlightPedidoId && pedidos.length > 0 && !hasAutoRedirected.current && entregadorId) {
             const pedido = pedidos.find(p => p.id === highlightPedidoId);
             console.log('🔎 Pedido encontrado:', pedido ? 'SIM' : 'NÃO', pedido?.id);
             
             if (pedido) {
-                // Delay maior no mobile para garantir que tudo carregou
-                const delay = isMobile ? 500 : 300;
-                
-                console.log(`⏱️ Aguardando ${delay}ms antes de abrir modal...`);
-                
-                setTimeout(() => {
-                    console.log('📋 Abrindo nota de entrega automaticamente para pedido:', highlightPedidoId);
-                    setSelectedOrder(pedido);
-                    setIsNoteOpen(true);
-                    hasAutoOpened.current = true;
-                    
-                    // Forçar scroll para o topo no mobile
-                    if (isMobile) {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
-                }, delay);
+                console.log('🚀 Redirecionando para página de entrega:', highlightPedidoId);
+                hasAutoRedirected.current = true;
+                navigate(`/entregador/${entregadorId}/entrega/${highlightPedidoId}`);
             } else {
                 console.warn('⚠️ Pedido não encontrado na lista. Pedidos disponíveis:', pedidos.map(p => p.id));
             }
         }
-    }, [isEntregadorView, highlightPedidoId, pedidos]);
+    }, [isEntregadorView, highlightPedidoId, pedidos, entregadorId, navigate]);
     
     // Auto-hide highlight message after 5 seconds
     React.useEffect(() => {
@@ -374,8 +359,15 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
     };
 
     const handleOpenNote = (pedido: Pedido) => {
-        setSelectedOrder(pedido);
-        setIsNoteOpen(true);
+        // Se for entregador, redireciona para página dedicada
+        if (isEntregadorView && entregadorId) {
+            console.log('🚀 Redirecionando entregador para página de entrega:', pedido.id);
+            navigate(`/entregador/${entregadorId}/entrega/${pedido.id}`);
+        } else {
+            // Se for admin, abre modal
+            setSelectedOrder(pedido);
+            setIsNoteOpen(true);
+        }
     }
 
     const handleOpenAssignModal = (pedido: Pedido) => {

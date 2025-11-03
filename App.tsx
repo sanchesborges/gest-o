@@ -15,6 +15,7 @@ import { UserRole } from './types';
 import { Products } from './components/Products';
 import { Entregadores } from './components/Entregadores';
 import { InstallPrompt } from './components/InstallPrompt';
+import { EntregadorDeliveryView } from './components/EntregadorDeliveryView';
 
 
 
@@ -78,10 +79,11 @@ const EntregadorPortal: React.FC = () => {
 
     return (
         <div className="flex flex-col h-screen bg-brand-light">
-            <main className="flex-1 overflow-y-auto p-4 pb-28">
+            <main className="flex-1 overflow-y-auto">
                 <Routes>
                     <Route index element={<Orders userRole={userRole} />} />
                     <Route path="pedidos" element={<Orders userRole={userRole} />} />
+                    <Route path="entrega/:pedidoId" element={<EntregadorDeliveryView />} />
                     <Route path="*" element={<Navigate to="." replace />} />
                 </Routes>
             </main>
