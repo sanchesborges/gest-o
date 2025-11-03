@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppData } from '../hooks/useAppData';
 import SignatureCanvas from 'react-signature-canvas';
-import { ArrowLeft, CheckCircle, Trash2, Package } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Trash2, Package, Send } from 'lucide-react';
 import { StatusPedido } from '../types';
 
 export const EntregadorDeliveryView: React.FC = () => {
@@ -39,6 +39,63 @@ export const EntregadorDeliveryView: React.FC = () => {
 
   const clearSignature = () => {
     sigCanvas.current?.clear();
+  };
+
+  const handleSendNoteToClient = () => {
+    if (!cliente?.telefone) {
+      alert("Cliente não possui telefone cadastrado.");
+      return;
+    }
+
+    // Verificar se a entrega já foi confirmada
+    if (pedido.status !== StatusPedido.ENTREGUE || !pedido.assinatura) {
+      alert("A entrega precisa ser confirmada antes de enviar a nota ao cliente.");
+      return;
+    }
+
+    // Preparar mensagem com informações da entrega
+    const itemsText = pedido.itens.map(item => {
+      const produto = produtos.find(p => p.id === item.produtoId);
+      return `- ${produto?.nome || 'N/A'} (${item.quantidade}x R$ ${item.precoUnitario.toFixed(2)}) = R$ ${(item.quantidade * item.precoUnitario).toFixed(2)}`;
+    }).join('%0A');
+
+    // Informações de pagamento
+    let pagamentoInfo = '';
+    if (pedido.statusPagamento === 'Pago') {
+      pagamentoInfo = `%0A✅ *PAGAMENTO: PAGO INTEGRALMENTE*%0A` +
+                     `💰 *Valor Pago: R$ ${pedido.valorTotal.toFixed(2)}*%0A`;
+    } else if (pedido.pagamentoParcial && pedido.valorPago) {
+      const saldoRestante = pedido.valorTotal;
+      const valorOriginal = pedido.valorTotal + pedido.valorPago;
+      pagamentoInfo = `%0A💵 *PAGAMENTO PARCIAL*%0A` +
+                     `💰 *Entrada Recebida: R$ ${pedido.valorPago.toFixed(2)}*%0A` +
+                     `💳 *Saldo Restante: R$ ${saldoRestante.toFixed(2)}*%0A` +
+                     `📊 *Valor Original: R$ ${valorOriginal.toFixed(2)}*%0A`;
+    } else {
+      pagamentoInfo = `%0A⏳ *PAGAMENTO: PENDENTE*%0A` +
+                     `💰 *Valor a Pagar: R$ ${pedido.valorTotal.toFixed(2)}*%0A`;
+    }
+
+    const message = `*COMPROVANTE DE ENTREGA - MANÁ*%0A%0A` +
+                   `Olá, *${cliente.nome}*!%0A%0A` +
+                   `Sua entrega foi realizada com sucesso! ✅%0A%0A` +
+                   `📦 *DETALHES DO PEDIDO*%0A` +
+                   `━━━━━━━━━━━━━━━━━━━━%0A` +
+                   `*Pedido:* ${pedido.id.toUpperCase()}%0A` +
+                   `*Data da Entrega:* ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}%0A%0A` +
+                   `*Itens Entregues:*%0A${itemsText}%0A%0A` +
+                   `━━━━━━━━━━━━━━━━━━━━%0A` +
+                   `*VALOR TOTAL: R$ ${(pedido.valorTotal + (pedido.valorPago || 0)).toFixed(2)}*${pagamentoInfo}%0A` +
+                   `━━━━━━━━━━━━━━━━━━━━%0A%0A` +
+                   `✍️ *Assinatura coletada com sucesso!*%0A%0A` +
+                   `Obrigado pela preferência! 🙏%0A%0A` +
+                   `_MANÁ - Produtos Congelados_`;
+
+    // Limpar telefone e abrir WhatsApp
+    const phoneNumber = cliente.telefone.replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+    
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleConfirmDelivery = async () => {
@@ -288,12 +345,23 @@ export const EntregadorDeliveryView: React.FC = () => {
           <h3 className="font-bold text-lg text-gray-800 mb-4">✍️ Assinatura do Cliente</h3>
           
           {pedido.assinatura ? (
-            <div className="border-2 rounded-lg bg-white p-2">
-              <img src={pedido.assinatura} alt="Assinatura" className="w-full h-auto"/>
-              <p className="text-center text-sm text-green-600 mt-2 font-semibold">
-                ✅ Entrega já confirmada
-              </p>
-            </div>
+            <>
+              <div className="border-2 rounded-lg bg-white p-2">
+                <img src={pedido.assinatura} alt="Assinatura" className="w-full h-auto"/>
+                <p className="text-center text-sm text-green-600 mt-2 font-semibold">
+                  ✅ Entrega já confirmada
+                </p>
+              </div>
+              
+              {/* Botão para enviar nota ao cliente */}
+              <button
+                onClick={handleSendNoteToClient}
+                className="w-full mt-4 bg-green-600 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center hover:bg-green-700 transition-colors"
+              >
+                <Send size={20} className="mr-2" />
+                Enviar Nota ao Cliente
+              </button>
+            </>
           ) : (
             <>
               <div className="relative w-full border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">

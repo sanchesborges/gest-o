@@ -6,6 +6,7 @@ import { Pedido, StatusPedido, StatusPagamento, UserRole } from '../types';
 import { OrderForm } from './OrderForm';
 import { DeliveryNote } from './DeliveryNote';
 import { FactoryOrders } from './FactoryOrders';
+import { EntregadorPendingNotes } from './EntregadorPendingNotes';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const getStatusColor = (status: StatusPedido) => {
@@ -261,6 +262,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
     const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
     const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [activeTab, setActiveTab] = useState<'entregas' | 'pendentes'>('entregas');
 
     const [statusFilter, setStatusFilter] = useState<StatusPedido | 'Todos'>('Todos');
     const [clientFilter, setClientFilter] = useState<string>('Todos');
@@ -438,7 +440,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
             )}
 
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <h2 className="text-3xl font-bold text-gray-800 flex items-center"><ShoppingCart className="mr-3" size={32} /> Gestão de Pedidos</h2>
+                <h2 className="text-3xl font-bold text-gray-800 flex items-center"><ShoppingCart className="mr-3" size={32} /> {isEntregadorView ? 'Minhas Entregas' : 'Gestão de Pedidos'}</h2>
                 <div className="flex flex-col sm:flex-row-reverse gap-2 w-full sm:w-auto">
                     {userRole === UserRole.ADMIN && selectedOrders.size > 0 && (
                         <button 
@@ -469,6 +471,34 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                     )}
                 </div>
             </div>
+
+            {/* Abas para Entregador */}
+            {isEntregadorView && entregadorId && (
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div className="flex border-b">
+                        <button
+                            onClick={() => setActiveTab('entregas')}
+                            className={`flex-1 py-4 px-6 font-semibold transition-colors ${
+                                activeTab === 'entregas'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                            }`}
+                        >
+                            📦 Minhas Entregas
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('pendentes')}
+                            className={`flex-1 py-4 px-6 font-semibold transition-colors ${
+                                activeTab === 'pendentes'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                            }`}
+                        >
+                            💰 Notas Pendentes
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="bg-white p-4 rounded-lg shadow-md">
                 <div className="flex items-center mb-2">
@@ -508,7 +538,10 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                 </div>
             </div>
 
-            {filteredPedidos.length === 0 ? (
+            {/* Renderizar conteúdo baseado na aba ativa (apenas para entregador) */}
+            {isEntregadorView && activeTab === 'pendentes' && entregadorId ? (
+                <EntregadorPendingNotes entregadorId={entregadorId} />
+            ) : filteredPedidos.length === 0 ? (
                 <div className="text-center py-10 text-gray-500 bg-white rounded-lg shadow-md">
                     <p>Nenhum pedido encontrado com os filtros selecionados.</p>
                 </div>
