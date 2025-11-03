@@ -18,10 +18,11 @@ interface AppDataContextType {
   deletePedido: (pedidoId: string) => Promise<void>;
   addEntradaEstoque: (entrada: Omit<EntradaEstoque, 'id'>) => Promise<void>;
   addPagamento: (pedidoId: string, valor: number, metodo: MetodoPagamento) => Promise<void>;
-  updatePedidoStatus: (pedidoId: string, status: StatusPedido, assinatura?: string) => Promise<void>;
+  updatePedidoStatus: (pedidoId: string, status: StatusPedido, assinatura?: string, valorPago?: number, pagamentoParcial?: boolean, pagamentoCompleto?: boolean) => Promise<void>;
   addEntregador: (entregador: Omit<Entregador, 'id'>) => Promise<void>;
   deleteEntregador: (entregadorId: string) => Promise<void>;
   assignEntregador: (pedidoId: string, entregadorId: string) => Promise<void>;
+  reloadPedidos: () => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -167,6 +168,10 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           statusPagamento: p.status_pagamento as StatusPagamento,
           dataVencimentoPagamento: new Date(p.data_vencimento_pagamento),
           assinatura: p.assinatura,
+          valorPago: p.valor_pago ? parseFloat(p.valor_pago) : undefined,
+          pagamentoParcial: p.pagamento_parcial || false,
+          dataPagamento: p.data_pagamento ? new Date(p.data_pagamento) : undefined,
+          metodoPagamentoEntrega: p.metodo_pagamento_entrega,
           itens: p.itens_pedido.map((item: any) => ({
             produtoId: item.produto_id,
             quantidade: item.quantidade,
@@ -762,11 +767,44 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  const updatePedidoStatus = async (pedidoId: string, status: StatusPedido, assinatura?: string) => {
+  const updatePedidoStatus = async (
+    pedidoId: string, 
+    status: StatusPedido, 
+    assinatura?: string,
+    valorPago?: number,
+    pagamentoParcial?: boolean,
+    pagamentoCompleto?: boolean
+  ) => {
     try {
+      const pedido = pedidos.find(p => p.id === pedidoId);
+      if (!pedido) {
+        console.error('Pedido não encontrado:', pedidoId);
+        return;
+      }
+
       const updateData: any = { status };
+      
       if (assinatura) {
         updateData.assinatura = assinatura;
+      }
+
+      // Atualizar informações de pagamento
+      if (valorPago !== undefined && valorPago > 0) {
+        updateData.valor_pago = valorPago;
+        updateData.data_pagamento = new Date().toISOString();
+        updateData.pagamento_parcial = pagamentoParcial || false;
+      }
+
+      // Se pagamento completo, marcar como PAGO
+      if (pagamentoCompleto) {
+        updateData.status_pagamento = StatusPagamento.PAGO;
+        updateData.valor_pago = pedido.valorTotal;
+        updateData.pagamento_parcial = false;
+      } else if (pagamentoParcial && valorPago) {
+        // Se pagamento parcial, continua PENDENTE mas atualiza o valor total
+        updateData.status_pagamento = StatusPagamento.PENDENTE;
+        // Atualizar valor total do pedido (abater a entrada)
+        updateData.valor_total = pedido.valorTotal - valorPago;
       }
 
       const { error } = await supabase
@@ -776,31 +814,43 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       if (error) {
         console.error('Erro ao atualizar status do pedido:', error);
+        throw error;
       }
 
+      // Atualizar estado local
       setPedidos(prev => prev.map(p => {
         if (p.id === pedidoId) {
           const updatedPedido: Pedido = { ...p, status };
+          
           if (assinatura) {
             updatedPedido.assinatura = assinatura;
           }
+          
+          if (valorPago !== undefined && valorPago > 0) {
+            updatedPedido.valorPago = valorPago;
+            updatedPedido.dataPagamento = new Date();
+            updatedPedido.pagamentoParcial = pagamentoParcial || false;
+          }
+
+          if (pagamentoCompleto) {
+            updatedPedido.statusPagamento = StatusPagamento.PAGO;
+            updatedPedido.valorPago = pedido.valorTotal;
+            updatedPedido.pagamentoParcial = false;
+          } else if (pagamentoParcial && valorPago) {
+            updatedPedido.statusPagamento = StatusPagamento.PENDENTE;
+            updatedPedido.valorTotal = pedido.valorTotal - valorPago;
+          }
+
           return updatedPedido;
         }
         return p;
       }));
+
+      console.log('✅ Pedido atualizado com sucesso:', pedidoId);
 
     } catch (error) {
       console.error('Erro ao atualizar pedido:', error);
-      setPedidos(prev => prev.map(p => {
-        if (p.id === pedidoId) {
-          const updatedPedido: Pedido = { ...p, status };
-          if (assinatura) {
-            updatedPedido.assinatura = assinatura;
-          }
-          return updatedPedido;
-        }
-        return p;
-      }));
+      alert('Erro ao atualizar pedido. Tente novamente.');
     }
   };
 
@@ -889,6 +939,43 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  const reloadPedidos = async () => {
+    console.log('🔄 Recarregando pedidos do Supabase...');
+    try {
+      const { data: pedidosData, error: pedidosError } = await supabase
+        .from('pedidos')
+        .select(`
+          *,
+          itens_pedido (*)
+        `);
+      
+      if (!pedidosError && pedidosData) {
+        const mappedPedidos = pedidosData.map((p: any) => ({
+          id: p.id,
+          clienteId: p.cliente_id,
+          entregadorId: p.entregador_id,
+          data: new Date(p.data),
+          valorTotal: parseFloat(p.valor_total),
+          status: p.status as StatusPedido,
+          statusPagamento: p.status_pagamento as StatusPagamento,
+          dataVencimentoPagamento: new Date(p.data_vencimento_pagamento),
+          assinatura: p.assinatura,
+          itens: p.itens_pedido.map((item: any) => ({
+            produtoId: item.produto_id,
+            quantidade: item.quantidade,
+            precoUnitario: parseFloat(item.preco_unitario)
+          }))
+        }));
+        setPedidos(mappedPedidos);
+        console.log('✅ Pedidos recarregados:', mappedPedidos.length);
+      } else if (pedidosError) {
+        console.error('❌ Erro ao recarregar pedidos:', pedidosError);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao recarregar pedidos:', error);
+    }
+  };
+
   const providerValue = {
     produtos,
     clientes,
@@ -908,6 +995,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     addEntregador,
     deleteEntregador,
     assignEntregador,
+    reloadPedidos,
   };
 
   return React.createElement(AppDataContext.Provider, { value: providerValue }, children);

@@ -41,7 +41,7 @@ Permitir o registro de entrada de **múltiplos produtos** de uma só vez no esto
    - Adicione à lista
 
 5. **Defina o Fornecedor** (Passo 3)
-   - Informe o fornecedor (ex: Fábrica Matriz)
+   - Informe o fornecedor (ex: Congelados Maná)
    - Será o mesmo para todos os produtos
 
 6. **Registre Tudo**
@@ -80,7 +80,7 @@ Permitir o registro de entrada de **múltiplos produtos** de uma só vez no esto
 
 ### 5. Campo Fornecedor
 - Texto livre
-- Padrão: "Fábrica Matriz"
+- Padrão: "Congelados Maná"
 
 ### 6. Botão Registrar
 - Mostra quantos produtos serão registrados

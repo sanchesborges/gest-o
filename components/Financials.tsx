@@ -131,7 +131,18 @@ export const Financials: React.FC<{userRole: UserRole}> = ({userRole}) => {
   
   const totalReceber = pendingPayments.reduce((sum, p) => sum + p.valorTotal, 0);
   const totalAtrasado = pendingPayments.filter(p => p.statusPagamento === StatusPagamento.ATRASADO).reduce((sum, p) => sum + p.valorTotal, 0);
-  const totalPago = pedidos.filter(p => p.statusPagamento === StatusPagamento.PAGO).reduce((sum, p) => sum + p.valorTotal, 0);
+  
+  // Total Pago = Pedidos pagos integralmente + Entradas parciais recebidas
+  const totalPago = pedidos.reduce((sum, p) => {
+    if (p.statusPagamento === StatusPagamento.PAGO) {
+      // Pedido pago integralmente
+      return sum + p.valorTotal;
+    } else if (p.valorPago && p.valorPago > 0) {
+      // Entrada parcial recebida
+      return sum + p.valorPago;
+    }
+    return sum;
+  }, 0);
 
   const handleRegisterPayment = (pedido: Pedido) => {
       setSelectedOrder(pedido);

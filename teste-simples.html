@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Simples - Estoque</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        #log { background: #f0f0f0; padding: 15px; margin-top: 20px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Teste Simples de Estoque</h1>
+    <button onclick="testarAdicionar()">Adicionar 10 Unidades</button>
+    <button onclick="verificarEstoque()">Verificar Estoque</button>
+    <button onclick="limparLog()">Limpar Log</button>
+    <div id="log"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const { createClient } = supabase;
+        const client = createClient(
+            'https://bkwgowsumeylnwbintdz.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrd2dvd3N1bWV5bG53YmludGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxOTQyMjIsImV4cCI6MjA3NTc3MDIyMn0.zCP5mCLyHMO0ag4I11ktRoPEGo_mPAGWP8idLMIwIFU'
+        );
+
+        function log(msg) {
+            const logDiv = document.getElementById('log');
+            logDiv.textContent += msg + '\n';
+            console.log(msg);
+        }
+
+        function limparLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        async function verificarEstoque() {
+            limparLog();
+            log('🔍 Buscando produtos...\n');
+            
+            const { data, error } = await client
+                .from('produtos')
+                .select('id, nome, estoque_atual')
+                .limit(5);
+            
+            if (error) {
+                log('❌ ERRO: ' + error.message);
+            } else {
+                log('✅ Produtos encontrados:\n');
+                data.forEach(p => {
+                    log(`  ${p.nome}: ${p.estoque_atual} unidades`);
+                });
+            }
+        }
+
+        async function testarAdicionar() {
+            limparLog();
+            log('🚀 TESTE: Adicionar 10 unidades\n');
+            
+            // 1. Buscar primeiro produto
+            log('1️⃣ Buscando produto...');
+            const { data: produto, error: fetchError } = await client
+                .from('produtos')
+                .select('id, nome, estoque_atual')
+                .limit(1)
+                .single();
+            
+            if (fetchError) {
+                log('❌ Erro ao buscar: ' + fetchError.message);
+                return;
+            }
+            
+            log(`   Produto: ${produto.nome}`);
+            log(`   Estoque ANTES: ${produto.estoque_atual}\n`);
+            
+            // 2. Calcular novo estoque
+            const estoqueAntes = produto.estoque_atual;
+            const quantidade = 10;
+            const novoEstoque = estoqueAntes + quantidade;
+            
+            log(`2️⃣ Calculando:`);
+            log(`   ${estoqueAntes} + ${quantidade} = ${novoEstoque}\n`);
+            
+            // 3. Atualizar no banco
+            log('3️⃣ Atualizando banco...');
+            const { error: updateError } = await client
+                .from('produtos')
+                .update({ estoque_atual: novoEstoque })
+                .eq('id', produto.id);
+            
+            if (updateError) {
+                log('❌ Erro ao atualizar: ' + updateError.message);
+                return;
+            }
+            
+            log('   ✅ Banco atualizado!\n');
+            
+            // 4. Verificar o que foi salvo
+            log('4️⃣ Verificando resultado...');
+            const { data: produtoDepois, error: checkError } = await client
+                .from('produtos')
+                .select('estoque_atual')
+                .eq('id', produto.id)
+                .single();
+            
+            if (checkError) {
+                log('❌ Erro ao verificar: ' + checkError.message);
+                return;
+            }
+            
+            log(`   Estoque DEPOIS: ${produtoDepois.estoque_atual}\n`);
+            
+            // 5. Comparar
+            if (produtoDepois.estoque_atual === novoEstoque) {
+                log('✅ SUCESSO! Estoque correto: ' + produtoDepois.estoque_atual);
+            } else {
+                log('❌ ERRO! Esperado: ' + novoEstoque + ', Obtido: ' + produtoDepois.estoque_atual);
+                log('⚠️ PROBLEMA: O banco está multiplicando ou há um trigger!');
+            }
+        }
+    </script>
+</body>
+</html>

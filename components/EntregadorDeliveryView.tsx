@@ -11,6 +11,8 @@ export const EntregadorDeliveryView: React.FC = () => {
   const { pedidos, clientes, produtos, updatePedidoStatus } = useAppData();
   const sigCanvas = useRef<SignatureCanvas>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pagamentoStatus, setPagamentoStatus] = useState<'nao_pago' | 'pago' | 'parcial'>('nao_pago');
+  const [valorEntrada, setValorEntrada] = useState<string>('');
 
   console.log('📱 EntregadorDeliveryView carregado:', { entregadorId, pedidoId });
 
@@ -45,26 +47,63 @@ export const EntregadorDeliveryView: React.FC = () => {
       return;
     }
 
+    // Validar pagamento parcial
+    if (pagamentoStatus === 'parcial') {
+      const valorEntradaNum = parseFloat(valorEntrada);
+      if (!valorEntrada || isNaN(valorEntradaNum) || valorEntradaNum <= 0) {
+        alert("Por favor, informe o valor da entrada.");
+        return;
+      }
+      if (valorEntradaNum >= pedido.valorTotal) {
+        alert("O valor da entrada deve ser menor que o valor total. Use 'Pago' se o cliente pagou tudo.");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
+      const signature = sigCanvas.current!.toDataURL('image/png');
+      const valorEntradaNum = pagamentoStatus === 'parcial' ? parseFloat(valorEntrada) : 0;
+      
+      // Calcular novo valor total se houver entrada
+      const novoValorTotal = pagamentoStatus === 'parcial' 
+        ? pedido.valorTotal - valorEntradaNum 
+        : pedido.valorTotal;
+
       // 1. Gerar mensagem formatada para WhatsApp
       const itemsText = pedido.itens.map(item => {
         const produto = produtos.find(p => p.id === item.produtoId);
         return `- ${produto?.nome || 'N/A'} (${item.quantidade}x R$ ${item.precoUnitario.toFixed(2)}) = R$ ${(item.quantidade * item.precoUnitario).toFixed(2)}`;
       }).join('%0A');
 
+      let pagamentoInfo = '';
+      if (pagamentoStatus === 'pago') {
+        pagamentoInfo = `%0A✅ *PAGAMENTO: PAGO INTEGRALMENTE*%0A`;
+      } else if (pagamentoStatus === 'parcial') {
+        pagamentoInfo = `%0A💰 *ENTRADA: R$ ${valorEntradaNum.toFixed(2)}*%0A` +
+                       `💳 *SALDO RESTANTE: R$ ${novoValorTotal.toFixed(2)}*%0A`;
+      } else {
+        pagamentoInfo = `%0A⏳ *PAGAMENTO: PENDENTE*%0A`;
+      }
+
       const markdownMessage = `*ROMANEIO DE ENTREGA*%0A%0A` +
                               `*Pedido:* ${pedido.id.toUpperCase()}%0A` +
                               `*Cliente:* ${cliente?.nome}%0A` +
                               `*Data:* ${pedido.data.toLocaleDateString('pt-BR')}%0A` +
                               `%0A---%0A*Itens:*%0A${itemsText}%0A---%0A` +
-                              `*VALOR TOTAL: R$ ${pedido.valorTotal.toFixed(2)}*%0A%0A` +
+                              `*VALOR TOTAL: R$ ${pedido.valorTotal.toFixed(2)}*${pagamentoInfo}%0A` +
                               `_Entrega confirmada._`;
 
-      // 2. Atualizar status no sistema
-      const signature = sigCanvas.current!.toDataURL('image/png');
-      await updatePedidoStatus(pedido.id, StatusPedido.ENTREGUE, signature);
+      // 2. Atualizar status no sistema com informações de pagamento
+      await updatePedidoStatus(
+        pedido.id, 
+        StatusPedido.ENTREGUE, 
+        signature,
+        pagamentoStatus === 'pago' ? pedido.valorTotal : (pagamentoStatus === 'parcial' ? valorEntradaNum : 0),
+        pagamentoStatus === 'parcial',
+        pagamentoStatus === 'pago'
+      );
       
       // 3. Abrir WhatsApp com a mensagem
       window.open(`https://wa.me/?text=${markdownMessage}`, '_blank');
@@ -166,9 +205,87 @@ export const EntregadorDeliveryView: React.FC = () => {
           </div>
         </div>
 
+        {/* Informações de Pagamento */}
+        {pedido.status !== StatusPedido.ENTREGUE && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="font-bold text-lg text-gray-800 mb-4">💰 Pagamento</h3>
+            
+            <div className="space-y-4">
+              {/* Opções de Pagamento */}
+              <div className="space-y-3">
+                <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       style={{ borderColor: pagamentoStatus === 'nao_pago' ? '#4F46E5' : '#D1D5DB' }}>
+                  <input
+                    type="radio"
+                    name="pagamento"
+                    value="nao_pago"
+                    checked={pagamentoStatus === 'nao_pago'}
+                    onChange={(e) => setPagamentoStatus(e.target.value as any)}
+                    className="w-5 h-5 text-indigo-600"
+                  />
+                  <span className="ml-3 font-medium text-gray-800">⏳ Não Pago (Pendente)</span>
+                </label>
+
+                <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       style={{ borderColor: pagamentoStatus === 'pago' ? '#10B981' : '#D1D5DB' }}>
+                  <input
+                    type="radio"
+                    name="pagamento"
+                    value="pago"
+                    checked={pagamentoStatus === 'pago'}
+                    onChange={(e) => setPagamentoStatus(e.target.value as any)}
+                    className="w-5 h-5 text-green-600"
+                  />
+                  <span className="ml-3 font-medium text-gray-800">✅ Pago Integralmente</span>
+                </label>
+
+                <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       style={{ borderColor: pagamentoStatus === 'parcial' ? '#F59E0B' : '#D1D5DB' }}>
+                  <input
+                    type="radio"
+                    name="pagamento"
+                    value="parcial"
+                    checked={pagamentoStatus === 'parcial'}
+                    onChange={(e) => setPagamentoStatus(e.target.value as any)}
+                    className="w-5 h-5 text-yellow-600"
+                  />
+                  <span className="ml-3 font-medium text-gray-800">💵 Pagamento Parcial (Entrada)</span>
+                </label>
+              </div>
+
+              {/* Campo de Valor de Entrada */}
+              {pagamentoStatus === 'parcial' && (
+                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                  <label htmlFor="valorEntrada" className="block text-sm font-medium text-gray-700 mb-2">
+                    Valor da Entrada (R$)
+                  </label>
+                  <input
+                    type="number"
+                    id="valorEntrada"
+                    value={valorEntrada}
+                    onChange={(e) => setValorEntrada(e.target.value)}
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0.01"
+                    max={pedido.valorTotal - 0.01}
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-lg font-bold"
+                  />
+                  {valorEntrada && parseFloat(valorEntrada) > 0 && (
+                    <div className="mt-3 p-3 bg-white rounded-lg border border-yellow-400">
+                      <p className="text-sm text-gray-600">Valor Total: <span className="font-bold">R$ {pedido.valorTotal.toFixed(2)}</span></p>
+                      <p className="text-sm text-gray-600">Entrada: <span className="font-bold text-green-600">R$ {parseFloat(valorEntrada).toFixed(2)}</span></p>
+                      <p className="text-sm text-gray-600 border-t mt-2 pt-2">Saldo Restante: <span className="font-bold text-red-600">R$ {(pedido.valorTotal - parseFloat(valorEntrada)).toFixed(2)}</span></p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Assinatura */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="font-bold text-lg text-gray-800 mb-4">Assinatura do Cliente</h3>
+          <h3 className="font-bold text-lg text-gray-800 mb-4">✍️ Assinatura do Cliente</h3>
           
           {pedido.assinatura ? (
             <div className="border-2 rounded-lg bg-white p-2">

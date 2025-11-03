@@ -86,6 +86,10 @@ export interface Pedido {
   statusPagamento: StatusPagamento;
   assinatura?: string; // base64
   entregadorId?: string;
+  valorPago?: number; // Valor pago pelo cliente na entrega
+  pagamentoParcial?: boolean; // Se foi pagamento parcial
+  dataPagamento?: Date; // Data do pagamento
+  metodoPagamentoEntrega?: MetodoPagamento; // Método usado na entrega
 }
 
 export enum MetodoPagamento {
