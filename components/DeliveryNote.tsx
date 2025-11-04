@@ -91,6 +91,37 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
     pdf.setFont('helvetica', 'bold');
     pdf.text("Valor Total:", 140, y + 7);
     pdf.text(`R$ ${pedido.valorTotal.toFixed(2)}`, 172, y + 7);
+    
+    // Informações de Pagamento
+    if (pedido.valorPago !== undefined && pedido.valorPago > 0) {
+      y += 10;
+      pdf.setFillColor(220, 252, 231); // Verde claro
+      pdf.rect(20, y, 170, 20, 'F');
+      pdf.setTextColor(22, 101, 52); // Verde escuro
+      pdf.text("Valor Recebido:", 140, y + 7);
+      pdf.text(`R$ ${pedido.valorPago.toFixed(2)}`, 172, y + 7);
+      
+      if (pedido.pagamentoParcial && pedido.valorPago < pedido.valorTotal) {
+        pdf.setTextColor(194, 65, 12); // Laranja
+        pdf.text("Saldo Restante:", 140, y + 14);
+        pdf.text(`R$ ${(pedido.valorTotal - pedido.valorPago).toFixed(2)}`, 172, y + 14);
+        y += 7;
+      }
+      
+      y += 7;
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      const statusPagamento = pedido.valorPago >= pedido.valorTotal ? '✓ PAGO INTEGRALMENTE' : '⚠ PAGAMENTO PARCIAL';
+      pdf.text(statusPagamento, 105, y + 7, { align: 'center' });
+      
+      if (pedido.metodoPagamentoEntrega) {
+        pdf.text(`Método: ${pedido.metodoPagamentoEntrega}`, 105, y + 12, { align: 'center' });
+      }
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 0, 0);
+      y += 10;
+    }
 
     // Signature
     if (pedido.assinatura) {
@@ -216,14 +247,32 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
       return `${produto?.nome || 'N/A'} - ${item.quantidade}x R$ ${item.precoUnitario.toFixed(2)} = R$ ${(item.quantidade * item.precoUnitario).toFixed(2)}`;
     }).join('%0A');
 
+    let pagamentoInfo = '';
+    if (pedido.valorPago !== undefined && pedido.valorPago > 0) {
+      pagamentoInfo = `%0A*VALOR RECEBIDO: R$ ${pedido.valorPago.toFixed(2)}*%0A`;
+      
+      if (pedido.pagamentoParcial && pedido.valorPago < pedido.valorTotal) {
+        pagamentoInfo += `_Saldo Restante: R$ ${(pedido.valorTotal - pedido.valorPago).toFixed(2)}_`;
+        pagamentoInfo += `%0A⚠️ *PAGAMENTO PARCIAL*`;
+      } else if (pedido.valorPago >= pedido.valorTotal) {
+        pagamentoInfo += `✅ *PAGO INTEGRALMENTE*`;
+      }
+      
+      if (pedido.metodoPagamentoEntrega) {
+        pagamentoInfo += `%0A_Método: ${pedido.metodoPagamentoEntrega}_`;
+      }
+      pagamentoInfo += '%0A';
+    }
+
     const message = `*NOTA DE ENTREGA - MANÁ*%0A%0A` +
                     `*Pedido:* ${pedido.id.toUpperCase()}%0A` +
                     `*Cliente:* ${cliente?.nome}%0A` +
                     `*Data:* ${pedido.data.toLocaleDateString('pt-BR')}%0A` +
                     `*Endereço:* ${cliente?.endereco}%0A%0A` +
                     `*ITENS:*%0A${itemsText}%0A%0A` +
-                    `*VALOR TOTAL: R$ ${pedido.valorTotal.toFixed(2)}*%0A%0A` +
-                    `_Pedido gerado pelo sistema SB_`;
+                    `*VALOR TOTAL: R$ ${pedido.valorTotal.toFixed(2)}*` +
+                    pagamentoInfo +
+                    `%0A_Pedido gerado pelo sistema SB_`;
 
     // Sempre abre sem número específico para permitir escolher o contato
     const whatsappUrl = `https://wa.me/?text=${message}`;
@@ -243,13 +292,31 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
         return `- ${produto?.nome || 'N/A'} (${item.quantidade}x R$ ${item.precoUnitario.toFixed(2)}) = R$ ${(item.quantidade * item.precoUnitario).toFixed(2)}`;
     }).join('\n');
 
+    let pagamentoInfo = '';
+    if (pedido.valorPago !== undefined && pedido.valorPago > 0) {
+      pagamentoInfo = `%0A*VALOR RECEBIDO: R$ ${pedido.valorPago.toFixed(2)}*%0A`;
+      
+      if (pedido.pagamentoParcial && pedido.valorPago < pedido.valorTotal) {
+        pagamentoInfo += `_Saldo Restante: R$ ${(pedido.valorTotal - pedido.valorPago).toFixed(2)}_`;
+        pagamentoInfo += `%0A⚠️ *PAGAMENTO PARCIAL*`;
+      } else if (pedido.valorPago >= pedido.valorTotal) {
+        pagamentoInfo += `✅ *PAGO INTEGRALMENTE*`;
+      }
+      
+      if (pedido.metodoPagamentoEntrega) {
+        pagamentoInfo += `%0A_Método: ${pedido.metodoPagamentoEntrega}_`;
+      }
+      pagamentoInfo += '%0A';
+    }
+
     const markdownMessage = `*ROMANEIO DE ENTREGA*%0A%0A` +
                             `*Pedido:* ${pedido.id.toUpperCase()}%0A` +
                             `*Cliente:* ${cliente?.nome}%0A` +
                             `*Data:* ${pedido.data.toLocaleDateString('pt-BR')}%0A` +
                             `%0A---%0A*Itens:*%0A${itemsText}%0A---%0A` +
-                            `*VALOR TOTAL: R$ ${pedido.valorTotal.toFixed(2)}*%0A%0A` +
-                            `_Entrega confirmada._`;
+                            `*VALOR TOTAL: R$ ${pedido.valorTotal.toFixed(2)}*` +
+                            pagamentoInfo +
+                            `%0A_Entrega confirmada._`;
 
     const encodedMessage = markdownMessage; // No double encoding
     
@@ -261,12 +328,7 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
     onClose();
   };
 
-  // Log de renderização
-  console.log('🎨 DeliveryNote renderizando para pedido:', pedido.id, {
-    clienteNome: cliente?.nome,
-    itensCount: pedido.itens.length,
-    windowSize: { width: window.innerWidth, height: window.innerHeight }
-  });
+
 
   return (
     <div 
@@ -347,6 +409,52 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
                   <span className="text-base">TOTAL:</span>
                   <span className="text-lg">R$ {pedido.valorTotal.toFixed(2)}</span>
               </div>
+              
+              {/* Informações de Pagamento - Mobile */}
+              {pedido.status === StatusPedido.ENTREGUE && pedido.valorPago !== undefined && pedido.valorPago >= 0 && (
+                <div className={`mt-3 p-3 border-2 rounded-lg ${
+                  pedido.valorPago === 0 
+                    ? 'bg-red-50 border-red-500' 
+                    : pedido.valorPago >= pedido.valorTotal 
+                      ? 'bg-green-50 border-green-500' 
+                      : 'bg-orange-50 border-orange-500'
+                }`}>
+                  <div>
+                    <div className="flex justify-between items-center">
+                      <span className={`text-sm font-semibold ${pedido.valorPago > 0 ? 'text-green-800' : 'text-red-800'}`}>
+                        {pedido.valorPago > 0 ? 'VALOR RECEBIDO:' : 'PAGAMENTO:'}
+                      </span>
+                      <span className={`text-lg font-bold ${pedido.valorPago > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                        {pedido.valorPago > 0 ? `R$ ${pedido.valorPago.toFixed(2)}` : 'NÃO PAGO'}
+                      </span>
+                    </div>
+                    
+                    <div className={`text-xs font-medium text-left py-1 rounded mt-2 ${
+                      pedido.valorPago === 0 
+                        ? 'text-red-600 bg-red-100' 
+                        : pedido.valorPago >= pedido.valorTotal 
+                          ? 'text-green-600 bg-green-100' 
+                          : 'text-orange-600 bg-orange-100'
+                    }`}>
+                      {pedido.valorPago === 0 
+                        ? '⏳ PENDENTE' 
+                        : pedido.valorPago >= pedido.valorTotal 
+                          ? '✓ PAGO INTEGRALMENTE' 
+                          : '⚠️ PAGAMENTO PARCIAL'}
+                    </div>
+                    
+                    {pedido.valorPago > 0 && pedido.pagamentoParcial && pedido.valorPago < pedido.valorTotal && (
+                      <div className="flex justify-between items-center text-sm text-orange-700 mt-2">
+                        <span>Saldo Restante:</span>
+                        <span className="font-semibold">R$ {(pedido.valorTotal - pedido.valorPago).toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                  {pedido.metodoPagamentoEntrega && (
+                    <p className="text-xs text-gray-600 mt-1">Método: {pedido.metodoPagamentoEntrega}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Desktop Items Table */}
@@ -378,6 +486,39 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
                             <td colSpan={3} className="px-6 py-3 text-right text-base">TOTAL:</td>
                             <td className="px-6 py-3 text-right text-base">R$ {pedido.valorTotal.toFixed(2)}</td>
                         </tr>
+                        {/* Informações de Pagamento - Desktop */}
+                        {pedido.status === StatusPedido.ENTREGUE && pedido.valorPago !== undefined && pedido.valorPago >= 0 && (
+                          <>
+                            <tr className={`font-semibold ${pedido.valorPago > 0 ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'}`}>
+                              <td colSpan={3} className="px-6 py-3 text-right text-base">
+                                {pedido.valorPago > 0 ? 'VALOR RECEBIDO:' : 'PAGAMENTO:'}
+                              </td>
+                              <td className="px-6 py-3 text-right text-base">
+                                {pedido.valorPago > 0 ? `R$ ${pedido.valorPago.toFixed(2)}` : 'NÃO PAGO'}
+                              </td>
+                            </tr>
+                            {pedido.valorPago > 0 && pedido.pagamentoParcial && pedido.valorPago < pedido.valorTotal && (
+                              <tr className="font-semibold text-orange-700 bg-orange-50">
+                                <td colSpan={3} className="px-6 py-3 text-right text-sm">Saldo Restante:</td>
+                                <td className="px-6 py-3 text-right text-sm">R$ {(pedido.valorTotal - pedido.valorPago).toFixed(2)}</td>
+                              </tr>
+                            )}
+                            <tr className={pedido.valorPago > 0 ? 'bg-green-50' : 'bg-red-50'}>
+                              <td colSpan={4} className="px-6 py-2 text-left text-xs">
+                                {pedido.valorPago === 0 ? (
+                                  <span className="text-red-600 font-medium">⏳ PENDENTE</span>
+                                ) : pedido.valorPago >= pedido.valorTotal ? (
+                                  <span className="text-green-600 font-medium">✓ PAGO INTEGRALMENTE</span>
+                                ) : (
+                                  <span className="text-orange-600 font-medium">⚠️ PAGAMENTO PARCIAL</span>
+                                )}
+                                {pedido.metodoPagamentoEntrega && (
+                                  <span className="text-gray-600 ml-3">• Método: {pedido.metodoPagamentoEntrega}</span>
+                                )}
+                              </td>
+                            </tr>
+                          </>
+                        )}
                     </tfoot>
                 </table>
             </div>
