@@ -169,7 +169,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           statusPagamento: p.status_pagamento as StatusPagamento,
           dataVencimentoPagamento: new Date(p.data_vencimento_pagamento),
           assinatura: p.assinatura,
-          valorPago: p.valor_pago ? parseFloat(p.valor_pago) : undefined,
+          valorPago: p.valor_pago !== null && p.valor_pago !== undefined ? parseFloat(p.valor_pago) : undefined,
           pagamentoParcial: p.pagamento_parcial || false,
           dataPagamento: p.data_pagamento ? new Date(p.data_pagamento) : undefined,
           metodoPagamentoEntrega: p.metodo_pagamento_entrega,
