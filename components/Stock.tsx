@@ -430,7 +430,7 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 }
 
 export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
-  const { produtos, deleteProduto } = useAppData();
+  const { produtos, ocultarProduto } = useAppData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [produtoToEdit, setProdutoToEdit] = useState<Produto | null>(null);
@@ -469,7 +469,7 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
 
   const handleDeleteSelected = async () => {
     for (const produtoId of selectedProducts) {
-      await deleteProduto(produtoId);
+      await ocultarProduto(produtoId);
     }
     setSelectedProducts(new Set());
     setShowDeleteConfirm(false);
@@ -484,10 +484,14 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={() => setShowDeleteConfirm(false)}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Confirmar Exclusão</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Remover da Lista</h3>
               <p className="text-gray-600 mb-6">
-                Tem certeza que deseja excluir {selectedProducts.size} {selectedProducts.size === 1 ? 'produto' : 'produtos'}? 
-                Esta ação não pode ser desfeita.
+                Tem certeza que deseja remover {selectedProducts.size} {selectedProducts.size === 1 ? 'produto' : 'produtos'} desta lista? 
+                <br /><br />
+                <span className="text-sm text-blue-600 font-medium">
+                  ℹ️ O produto não será excluído do sistema, apenas removido desta visualização. 
+                  Você ainda poderá encontrá-lo em "Cadastro de Produtos" e usá-lo em pedidos.
+                </span>
               </p>
               <div className="flex gap-3 justify-end">
                 <button
@@ -498,9 +502,9 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
                 </button>
                 <button
                   onClick={handleDeleteSelected}
-                  className="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors"
+                  className="bg-orange-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-orange-700 transition-colors"
                 >
-                  Excluir
+                  Remover
                 </button>
               </div>
             </div>
@@ -513,10 +517,10 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
                 {userRole === UserRole.ADMIN && selectedProducts.size > 0 && (
                     <button 
                         onClick={() => setShowDeleteConfirm(true)} 
-                        className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-red-700 transition-colors w-full sm:w-auto"
+                        className="bg-orange-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-orange-700 transition-colors w-full sm:w-auto"
                     >
                         <Trash2 className="mr-2" size={20} />
-                        Excluir ({selectedProducts.size})
+                        Remover ({selectedProducts.size})
                     </button>
                 )}
                 {userRole === UserRole.ADMIN && (

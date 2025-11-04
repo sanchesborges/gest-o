@@ -13,6 +13,7 @@ interface AppDataContextType {
   addProduto: (produto: Omit<Produto, 'id' | 'estoqueAtual'>) => Promise<void>;
   updateProduto: (produtoId: string, produtoData: Partial<Omit<Produto, 'id'>>) => Promise<void>;
   deleteProduto: (produtoId: string) => Promise<void>;
+  ocultarProduto: (produtoId: string) => Promise<void>;
   addCliente: (cliente: Omit<Cliente, 'id'>) => Promise<void>;
   updateCliente: (clienteId: string, clienteData: Partial<Omit<Cliente, 'id'>>) => Promise<void>;
   addPedido: (pedido: Omit<Pedido, 'id'>) => Promise<void>;
@@ -92,7 +93,8 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       // Load produtos
       const { data: produtosData, error: produtosError } = await supabase
         .from('produtos')
-        .select('*');
+        .select('*')
+        .eq('oculto', false); // Filtrar apenas produtos não ocultos
       if (!produtosError && produtosData) {
         const mappedProdutos = produtosData.map((p: any) => {
           const preco = parseFloat(p.preco_padrao);
@@ -410,6 +412,35 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       setProdutos(prev => prev.filter(p => p.id !== produtoId));
 
       alert(`Erro inesperado ao excluir produto. Verifique o console para mais detalhes.`);
+    }
+  };
+
+  const ocultarProduto = async (produtoId: string) => {
+    const produto = produtos.find(p => p.id === produtoId);
+    console.log(`👁️ Ocultando produto: ${produto?.nome} (ID: ${produtoId})`);
+
+    try {
+      // Marcar como oculto no Supabase
+      const { data, error } = await supabase
+        .from('produtos')
+        .update({ oculto: true })
+        .eq('id', produtoId)
+        .select();
+
+      if (error) {
+        console.error('❌ ERRO ao ocultar produto no Supabase:', error);
+        alert(`Erro ao ocultar produto: ${error.message}`);
+        return;
+      }
+
+      console.log(`✅ Produto ocultado com sucesso no Supabase:`, data);
+
+      // Remover da visualização local (mas não deletar do banco)
+      setProdutos(prev => prev.filter(p => p.id !== produtoId));
+
+    } catch (error) {
+      console.error('❌ Exceção ao ocultar produto:', error);
+      alert(`Erro inesperado ao ocultar produto. Verifique o console para mais detalhes.`);
     }
   };
 
@@ -1015,6 +1046,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     addProduto,
     updateProduto,
     deleteProduto,
+    ocultarProduto,
     addCliente,
     updateCliente,
     addPedido,

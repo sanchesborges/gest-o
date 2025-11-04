@@ -218,11 +218,21 @@ export const Products: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={() => setShowDeleteConfirm(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Confirmar Exclusão</h3>
-            <p className="text-gray-600 mb-6">
-              Tem certeza que deseja excluir {selectedProducts.size} {selectedProducts.size === 1 ? 'produto' : 'produtos'}? 
-              Esta ação não pode ser desfeita.
+            <h3 className="text-xl font-bold text-red-600 mb-4 flex items-center">
+              <span className="bg-red-100 p-2 rounded-full mr-3">⚠️</span>
+              Excluir Permanentemente
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Tem certeza que deseja excluir permanentemente {selectedProducts.size} {selectedProducts.size === 1 ? 'produto' : 'produtos'} do sistema? 
             </p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-6">
+              <p className="text-sm text-red-800 font-medium">
+                ⚠️ ATENÇÃO: Esta ação é irreversível!
+              </p>
+              <p className="text-xs text-red-700 mt-1">
+                O produto será removido completamente do banco de dados e não poderá ser recuperado.
+              </p>
+            </div>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -234,7 +244,7 @@ export const Products: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                 onClick={handleDeleteSelected}
                 className="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors"
               >
-                Excluir
+                Excluir Permanentemente
               </button>
             </div>
           </div>
