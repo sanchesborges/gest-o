@@ -100,12 +100,15 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           const preco = parseFloat(p.preco_padrao);
           console.log(`📦 Produto: ${p.nome}, Preço: ${p.preco_padrao} → ${preco}`);
 
+          const custo = p.custo_unitario ? parseFloat(p.custo_unitario) : 0;
+          
           return {
             id: p.id,
             nome: p.nome,
             tipo: p.tipo || 'Biscoito',
             tamanhoPacote: p.tamanho_pacote,
             precoPadrao: isNaN(preco) ? 0 : preco,
+            custoUnitario: isNaN(custo) ? 0 : custo,
             estoqueMinimo: p.estoque_minimo || 0,
             estoqueAtual: p.estoque_atual
           };
@@ -294,6 +297,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           tipo: newProduto.tipo,
           tamanho_pacote: newProduto.tamanhoPacote,
           preco_padrao: newProduto.precoPadrao,
+          custo_unitario: newProduto.custoUnitario || 0,
           estoque_minimo: newProduto.estoqueMinimo,
           estoque_atual: newProduto.estoqueAtual
         }])
@@ -338,6 +342,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (produtoData.tipo !== undefined) updateData.tipo = produtoData.tipo;
       if (produtoData.tamanhoPacote !== undefined) updateData.tamanho_pacote = produtoData.tamanhoPacote;
       if (produtoData.precoPadrao !== undefined) updateData.preco_padrao = produtoData.precoPadrao;
+      if (produtoData.custoUnitario !== undefined) updateData.custo_unitario = produtoData.custoUnitario;
       if (produtoData.estoqueMinimo !== undefined) updateData.estoque_minimo = produtoData.estoqueMinimo;
       if (produtoData.estoqueAtual !== undefined) updateData.estoque_atual = produtoData.estoqueAtual;
 

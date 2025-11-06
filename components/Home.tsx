@@ -90,9 +90,15 @@ export const Home: React.FC = () => {
             path: '/clientes'
         },
         {
+            icon: <TrendingUp size={28} className="text-white" />,
+            label: 'Vendas',
+            color: 'bg-gradient-to-br from-purple-400 to-purple-500',
+            path: '/vendas'
+        },
+        {
             icon: <FileText size={28} className="text-white" />,
             label: 'Relatórios',
-            color: 'bg-gradient-to-br from-purple-400 to-purple-500',
+            color: 'bg-gradient-to-br from-indigo-400 to-indigo-500',
             path: '/relatorios'
         },
         {

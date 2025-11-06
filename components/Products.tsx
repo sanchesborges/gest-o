@@ -10,6 +10,7 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [tamanhoPacote, setTamanhoPacote] = useState<TamanhoPacote>(TamanhoPacote.UM_KG);
     const [gramatura, setGramatura] = useState<string>('25g');
     const [precoPadrao, setPrecoPadrao] = useState(0);
+    const [custoUnitario, setCustoUnitario] = useState(0);
     const [estoqueMinimo, setEstoqueMinimo] = useState(10);
 
     const handleTamanhoPacoteChange = (novoTamanho: TamanhoPacote) => {
@@ -38,6 +39,7 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             tipo,
             tamanhoPacote: tamanhoFinal,
             precoPadrao,
+            custoUnitario,
             estoqueMinimo,
         });
         onClose();
@@ -104,13 +106,32 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="precoPadrao" className="block text-sm font-medium text-gray-700">Valor (R$)</label>
+                            <label htmlFor="precoPadrao" className="block text-sm font-medium text-gray-700">Preço de Venda (R$)</label>
                             <input id="precoPadrao" type="number" step="0.01" min="0" placeholder="25.00" value={precoPadrao} onChange={e => setPrecoPadrao(parseFloat(e.target.value))} required className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
                         </div>
+                        <div>
+                            <label htmlFor="custoUnitario" className="block text-sm font-medium text-gray-700">Custo Unitário (R$)</label>
+                            <input id="custoUnitario" type="number" step="0.01" min="0" placeholder="13.50" value={custoUnitario} onChange={e => setCustoUnitario(parseFloat(e.target.value))} className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="estoqueMinimo" className="block text-sm font-medium text-gray-700">Estoque Mínimo</label>
                             <input id="estoqueMinimo" type="number" min="0" placeholder="10" value={estoqueMinimo} onChange={e => setEstoqueMinimo(parseInt(e.target.value, 10))} required className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
                         </div>
+                        {custoUnitario > 0 && precoPadrao > 0 && (
+                            <div className="flex items-end">
+                                <div className="bg-green-50 border border-green-200 rounded-md p-2 w-full">
+                                    <p className="text-xs text-gray-600">Lucro por unidade:</p>
+                                    <p className="text-lg font-bold text-green-600">
+                                        R$ {(precoPadrao - custoUnitario).toFixed(2)}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        {((precoPadrao - custoUnitario) / precoPadrao * 100).toFixed(1)}% margem
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="flex justify-end space-x-4 pt-4">
                         <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancelar</button>

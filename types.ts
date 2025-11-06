@@ -19,6 +19,7 @@ export interface Produto {
   tipo: TipoProduto;
   tamanhoPacote: TamanhoPacote | string;
   precoPadrao: number;
+  custoUnitario?: number; // Custo de compra/produção
   estoqueMinimo: number;
   estoqueAtual: number;
 }
