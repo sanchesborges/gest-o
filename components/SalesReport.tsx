@@ -263,8 +263,8 @@ export const SalesReport: React.FC = () => {
       {estatisticas.totalCusto === 0 && produtosOrdenados.length > 0 && (
         <div className="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
           <p className="text-sm text-yellow-800">
-            <strong>⚠️ Atenção:</strong> Os custos dos produtos não estão cadastrados. 
-            Para calcular o lucro real, cadastre o custo de cada produto na página de Produtos.
+            <strong>⚠️ Precisa de um Aplicativo?:</strong> Fale com o top dos top. 
+            Sistemas e Aplicativos de Verdade.
           </p>
         </div>
       )}

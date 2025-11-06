@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -96,9 +97,10 @@
         }
     </style>
 </head>
+
 <body>
     <h1>🧪 Teste de Modal no Mobile</h1>
-    
+
     <div class="info">
         <strong>Dispositivo:</strong> <span id="device"></span><br>
         <strong>Navegador:</strong> <span id="browser"></span><br>
@@ -157,7 +159,7 @@
             const modal = document.getElementById('modal');
             modal.classList.add('active');
             log('Modal aberto com sucesso!', 'success');
-            
+
             // Bloquear scroll do body
             document.body.style.overflow = 'hidden';
             document.body.style.position = 'fixed';
@@ -170,7 +172,7 @@
             log('Fechando modal...', 'info');
             const modal = document.getElementById('modal');
             modal.classList.remove('active');
-            
+
             // Restaurar scroll do body
             document.body.style.overflow = '';
             document.body.style.position = '';
@@ -182,9 +184,9 @@
         function testAutoOpen() {
             log('🔄 Simulando abertura automática...', 'info');
             log(`Delay: ${isMobile ? '500ms' : '300ms'}`, 'info');
-            
+
             const delay = isMobile ? 500 : 300;
-            
+
             setTimeout(() => {
                 log('⏱️ Delay concluído, abrindo modal...', 'info');
                 openModal();
@@ -210,4 +212,5 @@
         }
     </script>
 </body>
+
 </html>
