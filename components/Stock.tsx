@@ -603,6 +603,7 @@ const EditProductModal: React.FC<{ produto: Produto; onClose: () => void }> = ({
   const [tamanhoPacote, setTamanhoPacote] = useState(produto.tamanhoPacote);
   const [precoPadrao, setPrecoPadrao] = useState(produto.precoPadrao);
   const [estoqueMinimo, setEstoqueMinimo] = useState(produto.estoqueMinimo);
+  const [estoqueAtual, setEstoqueAtual] = useState(produto.estoqueAtual);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -612,15 +613,28 @@ const EditProductModal: React.FC<{ produto: Produto; onClose: () => void }> = ({
       return;
     }
 
+    // Verificar se o estoque foi alterado
+    const estoqueAlterado = estoqueAtual !== produto.estoqueAtual;
+    const diferenca = estoqueAtual - produto.estoqueAtual;
+
     try {
       await updateProduto(produto.id, {
         nome: nome.trim(),
         tamanhoPacote,
         precoPadrao,
         estoqueMinimo,
+        estoqueAtual,
       });
 
-      alert('Produto atualizado com sucesso!');
+      if (estoqueAlterado) {
+        const mensagem = diferenca > 0 
+          ? `Produto atualizado com sucesso!\n\nEstoque aumentado em ${diferenca} unidades.`
+          : `Produto atualizado com sucesso!\n\nEstoque diminuído em ${Math.abs(diferenca)} unidades.`;
+        alert(mensagem);
+      } else {
+        alert('Produto atualizado com sucesso!');
+      }
+      
       onClose();
     } catch (error) {
       console.error('Erro ao atualizar produto:', error);
@@ -682,6 +696,54 @@ const EditProductModal: React.FC<{ produto: Produto; onClose: () => void }> = ({
               min="0"
               required
             />
+          </div>
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+            <label htmlFor="estoqueAtual" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+              <Package size={16} className="mr-1 text-green-600" />
+              Estoque Atual
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setEstoqueAtual(prev => Math.max(0, prev - 1))}
+                className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                aria-label="Diminuir estoque"
+              >
+                <Minus size={20} />
+              </button>
+              <input
+                type="number"
+                id="estoqueAtual"
+                value={estoqueAtual}
+                onChange={e => setEstoqueAtual(Math.max(0, parseInt(e.target.value) || 0))}
+                className="flex-1 p-2 border-2 border-green-300 rounded-md shadow-sm text-center text-lg font-bold text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                min="0"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setEstoqueAtual(prev => prev + 1)}
+                className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition-colors"
+                aria-label="Aumentar estoque"
+              >
+                <Plus size={20} />
+              </button>
+            </div>
+            {estoqueAtual !== produto.estoqueAtual && (
+              <div className="mt-2 p-2 bg-white rounded-md border border-green-300">
+                <p className="text-xs text-gray-600">
+                  {estoqueAtual > produto.estoqueAtual ? (
+                    <span className="text-green-600 font-semibold">
+                      ↑ Aumento de {estoqueAtual - produto.estoqueAtual} unidades
+                    </span>
+                  ) : (
+                    <span className="text-orange-600 font-semibold">
+                      ↓ Redução de {produto.estoqueAtual - estoqueAtual} unidades
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
           </div>
           <div className="flex justify-end space-x-4 pt-4">
             <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">
