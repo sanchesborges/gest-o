@@ -451,7 +451,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                     {userRole === UserRole.ADMIN && (
                         <>
                             <button 
-                                onClick={() => setIsFactoryOrdersOpen(true)} 
+                                onClick={() => navigate('/pedidos/fabrica')} 
                                 className="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center hover:bg-purple-700 transition-colors w-full sm:w-auto"
                             >
                                 <Factory className="mr-2" size={20} />

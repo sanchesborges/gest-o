@@ -7,6 +7,7 @@ import { Dashboard } from './components/Dashboard';
 import { Graficos } from './components/Graficos';
 import { Stock } from './components/Stock';
 import { Orders } from './components/Orders';
+import { FactoryOrders } from './components/FactoryOrders';
 import { Clients } from './components/Clients';
 import { Financials } from './components/Financials';
 import { Reports } from './components/Reports';
@@ -114,6 +115,7 @@ const AdminPortal: React.FC = () => {
                     <Route path="/estoque" element={<Stock userRole={userRole} />} />
                     <Route path="/produtos" element={<Products userRole={userRole} />} />
                     <Route path="/pedidos" element={<Orders userRole={userRole} />} />
+                    <Route path="/pedidos/fabrica" element={<FactoryOrders asPage />} />
                     <Route path="/clientes" element={<Clients userRole={userRole} />} />
                     <Route path="/entregadores" element={<Entregadores />} />
                     <Route

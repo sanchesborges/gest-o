@@ -3,6 +3,7 @@ import { useAppData } from '../hooks/useAppData';
 import { X, Download, Share2, Factory, Plus, Minus } from 'lucide-react';
 import { StatusPedido } from '../types';
 import html2canvas from 'html2canvas';
+import { useNavigate } from 'react-router-dom';
 
 interface ConsolidatedProduct {
   produtoId: string;
@@ -10,13 +11,14 @@ interface ConsolidatedProduct {
   quantidadeTotal: number;
 }
 
-export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+export const FactoryOrders: React.FC<{ onClose?: () => void; asPage?: boolean }> = ({ onClose, asPage = false }) => {
   const { pedidos, produtos } = useAppData();
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-  const [includeDelivered, setIncludeDelivered] = useState(true); // Mudado para true por padrão
-  const [orderDate, setOrderDate] = useState<Date>(new Date()); // Data do pedido para fábrica
+  const [includeDelivered, setIncludeDelivered] = useState(true);
+  const [orderDate, setOrderDate] = useState<Date>(new Date());
   const contentRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Estados para modo manual de seleção de produtos
   const [useManual, setUseManual] = useState<boolean>(false);
@@ -274,8 +276,8 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-start z-50 p-4 pb-28 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8 mb-8 max-h-[calc(100vh-8rem)] flex flex-col">
+    <div className={asPage ? "flex justify-center items-start p-4 pb-28 overflow-y-auto" : "fixed inset-0 bg-black bg-opacity-60 flex justify-center items-start z-50 p-4 pb-28 overflow-y-auto"}>
+      <div className={asPage ? "bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-auto my-6 flex flex-col" : "bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8 mb-8 max-h-[calc(100vh-8rem)] flex flex-col"}>
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 p-6 rounded-t-2xl">
           <div className="flex justify-between items-center">
@@ -283,12 +285,21 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
               <Factory className="mr-3" size={28} />
               Pedidos Para Fábrica
             </h2>
-            <button
-              onClick={onClose}
-              className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
-            >
-              <X size={24} />
-            </button>
+            {asPage ? (
+              <button
+                onClick={() => navigate('/pedidos')}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+              >
+                Voltar
+              </button>
+            ) : (
+              <button
+                onClick={onClose}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            )}
           </div>
         </div>
 
