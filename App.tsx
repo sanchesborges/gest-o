@@ -62,7 +62,7 @@ const BottomNavBar: React.FC<{ userRole: UserRole; onHomeClick?: () => void }> =
     const accessibleItems = userRole === UserRole.ADMIN ? adminNavItems : entregadorNavItems;
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-r from-indigo-600 to-indigo-700 shadow-2xl flex justify-around items-center z-50 rounded-t-3xl">
+        <nav className="fixed bottom-0 left-0 right-0 h-14 bg-gradient-to-r from-indigo-600 to-indigo-700 shadow-2xl flex justify-around items-center z-50">
             {accessibleItems.map(item => (
                 <BottomNavItem
                     key={item.label}
@@ -105,7 +105,7 @@ const AdminPortal: React.FC = () => {
 
     return (
         <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-            <main className="flex-1 overflow-y-auto pb-28">
+            <main className="flex-1 overflow-y-auto pb-20">
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/graficos" element={<Graficos />} />
