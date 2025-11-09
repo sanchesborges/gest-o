@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { X, Download, Share2, Factory } from 'lucide-react';
+import { X, Download, Share2, Factory, Plus, Minus } from 'lucide-react';
 import { StatusPedido } from '../types';
 import html2canvas from 'html2canvas';
 
@@ -18,40 +18,66 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
   const [orderDate, setOrderDate] = useState<Date>(new Date()); // Data do pedido para fábrica
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Debug inicial
-  React.useEffect(() => {
-    console.log('🏭 FactoryOrders montado!');
-    console.log('📦 Total de pedidos disponíveis:', pedidos.length);
-    console.log('📦 Pedidos detalhados:', pedidos.map(p => ({
-      id: p.id,
-      data: new Date(p.data).toLocaleDateString('pt-BR'),
-      dataOriginal: p.data,
-      status: p.status,
-      itens: p.itens.length,
-      produtos: p.itens.map(i => {
-        const prod = produtos.find(pr => pr.id === i.produtoId);
-        return `${prod?.nome}: ${i.quantidade}`;
-      })
-    })));
-  }, [pedidos, produtos]);
-
+  // Estados para modo manual de seleção de produtos
+  const [useManual, setUseManual] = useState<boolean>(false);
+  const [manualItems, setManualItems] = useState<{ produtoId: string; quantidade: number }[]>([]);
+  const [newItemProductId, setNewItemProductId] = useState<string>('');
+  const [newItemQty, setNewItemQty] = useState<number>(1);
+  
+  // Ações do modo manual
+  const addManualItem = () => {
+    if (!newItemProductId) return;
+    setManualItems(prev => {
+      const existing = prev.find(i => i.produtoId === newItemProductId);
+      if (existing) {
+        return prev.map(i =>
+          i.produtoId === newItemProductId ? { ...i, quantidade: newItemQty } : i
+        );
+      }
+      return [...prev, { produtoId: newItemProductId, quantidade: newItemQty }];
+    });
+    setNewItemProductId('');
+    setNewItemQty(1);
+  };
+  
+  const updateItemQty = (produtoId: string, qty: number) => {
+    const normalized = Math.max(1, qty || 1);
+    setManualItems(prev =>
+      prev.map(i => (i.produtoId === produtoId ? { ...i, quantidade: normalized } : i))
+    );
+  };
+  
+  const removeItem = (produtoId: string) => {
+    setManualItems(prev => prev.filter(i => i.produtoId !== produtoId));
+  };
   const handleClearFilters = () => {
     setStartDate('');
     setEndDate('');
     setIncludeDelivered(true); // Volta para true ao limpar
     setOrderDate(new Date()); // Reseta para data atual
+    setManualItems([]);
+    setUseManual(true);
   };
 
   // Consolidar produtos dos pedidos
   const consolidatedProducts = useMemo(() => {
+    if (useManual) {
+      const list = manualItems.map(it => {
+        const produto = produtos.find(p => p.id === it.produtoId);
+        return {
+          produtoId: it.produtoId,
+          nome: produto?.nome || 'Produto',
+          quantidadeTotal: it.quantidade,
+        } as ConsolidatedProduct;
+      });
+      return list.sort((a, b) => a.nome.localeCompare(b.nome));
+    }
+
     console.log('🔍 Debug - Total de pedidos:', pedidos.length);
     console.log('🔍 Debug - Filtros:', { startDate, endDate, includeDelivered });
 
     let filteredPedidos = pedidos;
 
-    // Filtrar por status
-    // Por padrão mostra todos (pendentes + entregues) para consolidar o que foi vendido
-    // Se desmarcar "incluir entregues", mostra apenas pendentes
     if (!includeDelivered) {
       filteredPedidos = filteredPedidos.filter(p => p.status === StatusPedido.PENDENTE);
       console.log('🔍 Debug - Após filtro de status (apenas pendentes):', filteredPedidos.length);
@@ -59,7 +85,6 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
       console.log('🔍 Debug - Mostrando todos os pedidos (pendentes + entregues):', filteredPedidos.length);
     }
 
-    // Filtrar por data
     if (startDate) {
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
@@ -67,10 +92,8 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         const pedidoDate = new Date(p.data);
         pedidoDate.setHours(0, 0, 0, 0);
         const match = pedidoDate >= start;
-        console.log('🔍 Pedido data:', pedidoDate.toLocaleDateString('pt-BR'), 'vs início:', start.toLocaleDateString('pt-BR'), '- Match:', match);
         return match;
       });
-      console.log('🔍 Debug - Após filtro data início:', filteredPedidos.length);
     }
     if (endDate) {
       const end = new Date(endDate);
@@ -79,17 +102,11 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         const pedidoDate = new Date(p.data);
         pedidoDate.setHours(23, 59, 59, 999);
         const match = pedidoDate <= end;
-        console.log('🔍 Pedido data:', pedidoDate.toLocaleDateString('pt-BR'), 'vs fim:', end.toLocaleDateString('pt-BR'), '- Match:', match);
         return match;
       });
-      console.log('🔍 Debug - Após filtro data fim:', filteredPedidos.length);
     }
 
-    console.log('🔍 Debug - Total filtrado:', filteredPedidos.length);
-
-    // Consolidar produtos
     const productMap = new Map<string, number>();
-
     filteredPedidos.forEach(pedido => {
       pedido.itens.forEach(item => {
         const currentQty = productMap.get(item.produtoId) || 0;
@@ -97,7 +114,6 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
       });
     });
 
-    // Converter para array e adicionar informações do produto
     const consolidated: ConsolidatedProduct[] = [];
     productMap.forEach((quantidade, produtoId) => {
       const produto = produtos.find(p => p.id === produtoId);
@@ -110,11 +126,9 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
       }
     });
 
-    // Ordenar por nome
     const sorted = consolidated.sort((a, b) => a.nome.localeCompare(b.nome));
-    console.log('🔍 Debug - Produtos consolidados:', sorted.length, sorted);
     return sorted;
-  }, [pedidos, produtos, startDate, endDate, includeDelivered]);
+  }, [useManual, manualItems, pedidos, produtos, startDate, endDate, includeDelivered]);
 
   const totalItems = consolidatedProducts.reduce((sum, p) => sum + p.quantidadeTotal, 0);
 
@@ -290,59 +304,173 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             </button>
           </div>
 
-          {/* Data do Pedido para Fábrica */}
-          <div className="mb-4 bg-white p-4 rounded-lg border border-indigo-200">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              📅 Data do Pedido para Fábrica
-            </label>
-            <input
-              type="date"
-              value={orderDate.toISOString().split('T')[0]}
-              onChange={(e) => setOrderDate(new Date(e.target.value + 'T12:00:00'))}
-              className="w-full md:w-auto p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Esta é a data que aparecerá no pedido gerado (documento e WhatsApp)
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
-                Data Início
-              </label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
-                Data Fim
-              </label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-            <div className="col-span-2 md:col-span-1 flex items-end">
+          {/* Modo Manual + Data lado a lado */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {/* Modo Manual */}
+            <div className="bg-white p-4 rounded-lg border border-indigo-200">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={includeDelivered}
-                  onChange={(e) => setIncludeDelivered(e.target.checked)}
+                  checked={useManual}
+                  onChange={(e) => setUseManual(e.target.checked)}
                   className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
                 />
                 <span className="text-xs md:text-sm font-medium text-gray-700">
-                  Incluir pedidos entregues
+                  Selecionar manualmente produtos e quantidades
                 </span>
               </label>
+              <p className="text-xs text-gray-500 mt-1">
+                Quando ativo, você escolhe os produtos e quantidades para enviar à fábrica.
+              </p>
+            </div>
+
+            {/* Data do Pedido para Fábrica */}
+            <div className="bg-white p-4 rounded-lg border border-indigo-200">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                📅 Data do Pedido para Fábrica
+              </label>
+              <input
+                type="date"
+                value={orderDate.toISOString().split('T')[0]}
+                onChange={(e) => setOrderDate(new Date(e.target.value + 'T12:00:00'))}
+                className="w-full md:w-auto p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Esta é a data que aparecerá no pedido gerado (documento e WhatsApp)
+              </p>
             </div>
           </div>
+
+          {useManual ? (
+            <div className="mb-4 bg-white p-4 rounded-lg border border-indigo-200">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <select
+                  value={newItemProductId}
+                  onChange={(e) => setNewItemProductId(e.target.value)}
+                  className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Selecione um produto</option>
+                  {produtos.map(p => (
+                    <option key={p.id} value={p.id}>{p.nome}</option>
+                  ))}
+                </select>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewItemQty(Math.max(1, (newItemQty || 1) - 1))}
+                    className="p-2 border border-gray-300 rounded-lg text-indigo-600 hover:bg-indigo-50"
+                    aria-label="Diminuir quantidade"
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    value={newItemQty}
+                    onChange={(e) => setNewItemQty(parseInt(e.target.value || '1', 10))}
+                    className="w-24 p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setNewItemQty((newItemQty || 1) + 1)}
+                    className="p-2 border border-gray-300 rounded-lg text-indigo-600 hover:bg-indigo-50"
+                    aria-label="Aumentar quantidade"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+                <button
+                  onClick={addManualItem}
+                  className="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Adicionar
+                </button>
+              </div>
+
+              {manualItems.length > 0 && (
+                <div className="mt-4 max-h-48 overflow-y-auto pr-2">
+                  {manualItems.map(item => {
+                    const prod = produtos.find(p => p.id === item.produtoId);
+                    return (
+                      <div key={item.produtoId} className="flex items-center justify-between py-2 border-b border-gray-200">
+                        <span className="text-sm text-gray-800">{prod?.nome}</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateItemQty(item.produtoId, item.quantidade - 1)}
+                            disabled={item.quantidade <= 1}
+                            className="p-2 border border-gray-300 rounded-lg text-indigo-600 hover:bg-indigo-50 disabled:opacity-50"
+                            aria-label={`Diminuir quantidade de ${prod?.nome}`}
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <input
+                            type="number"
+                            min={1}
+                            value={item.quantidade}
+                            onChange={(e) => updateItemQty(item.produtoId, parseInt(e.target.value || '1', 10))}
+                            className="w-20 p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateItemQty(item.produtoId, item.quantidade + 1)}
+                            className="p-2 border border-gray-300 rounded-lg text-indigo-600 hover:bg-indigo-50"
+                            aria-label={`Aumentar quantidade de ${prod?.nome}`}
+                          >
+                            <Plus size={16} />
+                          </button>
+                          <button
+                            onClick={() => removeItem(item.produtoId)}
+                            className="text-red-600 text-sm font-medium hover:underline"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
+                  Data Início
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
+                  Data Fim
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div className="col-span-2 md:col-span-1 flex items-end">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeDelivered}
+                    onChange={(e) => setIncludeDelivered(e.target.checked)}
+                    className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <span className="text-xs md:text-sm font-medium text-gray-700">
+                    Incluir pedidos entregues
+                  </span>
+                </label>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Content to be exported */}
@@ -368,45 +496,10 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
           {consolidatedProducts.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <p className="text-lg font-semibold mb-4">Nenhum produto encontrado</p>
-              <div className="text-sm space-y-3 bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-2xl mx-auto text-left">
-                <p className="font-medium text-yellow-800 text-center">Informações de Debug:</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <p>• Total de pedidos: {pedidos.length}</p>
-                  <p>• Pedidos pendentes: {pedidos.filter(p => p.status === StatusPedido.PENDENTE).length}</p>
-                  <p>• Pedidos entregues: {pedidos.filter(p => p.status === StatusPedido.ENTREGUE).length}</p>
-                  <p>• Incluir entregues: {includeDelivered ? 'Sim' : 'Não'}</p>
-                </div>
-                <div className="border-t border-yellow-300 pt-2">
-                  <p className="font-medium text-yellow-800">Filtros Aplicados:</p>
-                  <p>• Data início: {startDate ? new Date(startDate).toLocaleDateString('pt-BR') : 'Nenhum'}</p>
-                  <p>• Data fim: {endDate ? new Date(endDate).toLocaleDateString('pt-BR') : 'Nenhum'}</p>
-                </div>
-                <div className="border-t border-yellow-300 pt-2">
-                  <p className="font-medium text-yellow-800">Pedidos Pendentes:</p>
-                  {pedidos.filter(p => p.status === StatusPedido.PENDENTE).length === 0 ? (
-                    <p className="text-red-600">⚠️ Não há pedidos pendentes!</p>
-                  ) : (
-                    pedidos.filter(p => p.status === StatusPedido.PENDENTE).map(p => (
-                      <p key={p.id} className="text-xs">
-                        • Pedido {p.id.substring(0, 8)} - Data: {new Date(p.data).toLocaleDateString('pt-BR')} - {p.itens.length} itens
-                      </p>
-                    ))
-                  )}
-                </div>
-                {includeDelivered && (
-                  <div className="border-t border-yellow-300 pt-2">
-                    <p className="font-medium text-yellow-800">Pedidos Entregues (primeiros 5):</p>
-                    {pedidos.filter(p => p.status === StatusPedido.ENTREGUE).slice(0, 5).map(p => (
-                      <p key={p.id} className="text-xs">
-                        • Pedido {p.id.substring(0, 8)} - Data: {new Date(p.data).toLocaleDateString('pt-BR')} - {p.itens.length} itens
-                      </p>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Removido bloco de informações de debug */}
               <p className="text-sm mt-4 font-medium">💡 Dica: {
                 !includeDelivered && pedidos.filter(p => p.status === StatusPedido.PENDENTE).length === 0
-                  ? 'Não há pedidos pendentes. Marque "Incluir pedidos entregues" para ver o histórico.'
+                  ? 'Não tem um Sistema top? me chame agora (98) 9 9216-2218'
                   : !includeDelivered && pedidos.filter(p => p.status === StatusPedido.PENDENTE).length === 1
                     ? 'Há apenas 1 pedido pendente. Verifique se a data dele corresponde ao filtro, ou marque "Incluir pedidos entregues".'
                     : includeDelivered && pedidos.filter(p => p.status === StatusPedido.ENTREGUE).length === 0
@@ -464,7 +557,7 @@ export const FactoryOrders: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         </div>
 
         {/* Actions */}
-        <div className="p-6 bg-gray-50 rounded-b-2xl border-t flex flex-row gap-3 justify-end flex-shrink-0">
+        <div className="p-6 bg-gray-50 rounded-b-2xl border-t flex flex-row gap-3 justify-end flex-shrink-0 sticky bottom-0 z-20">
           <button
             onClick={handleDownloadImage}
             disabled={consolidatedProducts.length === 0}
