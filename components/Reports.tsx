@@ -4,7 +4,7 @@ import { FileText, Download, Share2, Calendar, Package, TrendingUp, Filter } fro
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
-type ReportType = 'weekly-orders' | 'products-summary' | 'factory-orders';
+type ReportType = 'weekly-orders' | 'products-summary' | 'factory-orders' | 'customer-history';
 type ExportFormat = 'whatsapp-text' | 'whatsapp-image' | 'pdf';
 
 export const Reports: React.FC = () => {
@@ -16,6 +16,8 @@ export const Reports: React.FC = () => {
         return date.toISOString().split('T')[0];
     });
     const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [selectedClientId, setSelectedClientId] = useState<string>('');
+    const [ignorePeriod, setIgnorePeriod] = useState<boolean>(false);
     const reportRef = useRef<HTMLDivElement>(null);
 
     // Filtrar pedidos por período
@@ -24,7 +26,13 @@ export const Reports: React.FC = () => {
         const start = new Date(startDate);
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-        return pedidoDate >= start && pedidoDate <= end;
+        const inRange = pedidoDate >= start && pedidoDate <= end;
+        if (reportType === 'customer-history') {
+            if (!selectedClientId) return false;
+            if (ignorePeriod) return p.clienteId === selectedClientId;
+            return inRange && p.clienteId === selectedClientId;
+        }
+        return inRange;
     });
 
     // Calcular totais
@@ -136,11 +144,11 @@ export const Reports: React.FC = () => {
             text += `*VALOR TOTAL:* R$ ${valorTotalPedidos.toFixed(2)}%0A`;
 
             return text;
-        } else {
-            // factory-orders
+        } else if (reportType === 'factory-orders') {
             let text = `*PEDIDOS PARA FABRICA - MANA*%0A`;
             text += `================================%0A`;
-            text += `*Periodo:* ${startFormatted} a ${endFormatted}%0A%0A`;
+            const periodText = ignorePeriod ? 'Todos' : `${startFormatted} a ${endFormatted}`;
+            text += `*Periodo:* ${periodText}%0A%0A`;
             text += `*Total de Pedidos:* ${totalEntradas}%0A`;
             text += `*Total de Unidades:* ${totalUnidadesEntradas}%0A%0A`;
             text += `*HISTORICO DE PEDIDOS:*%0A`;
@@ -157,6 +165,48 @@ export const Reports: React.FC = () => {
                     text += `*Produtos:*%0A`;
                     entrada.produtos.forEach(prod => {
                         text += `  - ${prod.quantidade}x ${prod.nome} ${prod.tamanhoPacote}%0A`;
+                    });
+                    text += `%0A`;
+                });
+
+            return text;
+        } else {
+            const cliente = clientes.find(c => c.id === selectedClientId);
+            let text = `*RELATORIO POR CLIENTE - MANA*%0A`;
+            text += `================================%0A`;
+            text += `*Cliente:* ${cliente?.nome || 'N/A'}%0A`;
+            text += `*Periodo:* ${startFormatted} a ${endFormatted}%0A%0A`;
+            text += `*Total de Pedidos:* ${totalPedidos}%0A`;
+            text += `*Valor Total:* R$ ${valorTotalPedidos.toFixed(2)}%0A%0A`;
+            const entregues = filteredPedidos.filter(p => p.status === 'Entregue');
+            const pendentes = filteredPedidos.filter(p => p.status === 'Pendente');
+            const valorEntregue = entregues.reduce((sum, p) => sum + p.valorTotal, 0);
+            const valorPendente = pendentes.reduce((sum, p) => sum + p.valorTotal, 0);
+            text += `*Entregues:* ${entregues.length} pedidos (R$ ${valorEntregue.toFixed(2)})%0A`;
+            text += `*Pendentes:* ${pendentes.length} pedidos (R$ ${valorPendente.toFixed(2)})%0A%0A`;
+            const now = new Date();
+            const pagos = filteredPedidos.filter(p => p.statusPagamento === 'Pago');
+            const pagosValor = pagos.reduce((sum, p) => sum + (p.valorPago ?? p.valorTotal), 0);
+            const atrasados = filteredPedidos.filter(p => p.statusPagamento !== 'Pago' && p.dataVencimentoPagamento.getTime() < now.getTime());
+            const pendPag = filteredPedidos.filter(p => p.statusPagamento !== 'Pago' && p.dataVencimentoPagamento.getTime() >= now.getTime());
+            const pendPagValor = pendPag.reduce((sum, p) => sum + p.valorTotal, 0);
+            const atrasadosValor = atrasados.reduce((sum, p) => sum + p.valorTotal, 0);
+            text += `*Pagos:* ${pagos.length} pedidos (R$ ${pagosValor.toFixed(2)})%0A`;
+            text += `*Pagamento Pendente:* ${pendPag.length} pedidos (R$ ${pendPagValor.toFixed(2)})%0A`;
+            text += `*Atrasados:* ${atrasados.length} pedidos (R$ ${atrasadosValor.toFixed(2)})%0A%0A`;
+            text += `*HISTORICO:*%0A`;
+            text += `================================%0A%0A`;
+
+            filteredPedidos
+                .sort((a, b) => b.data.getTime() - a.data.getTime())
+                .forEach(pedido => {
+                    text += `*${pedido.data.toLocaleDateString('pt-BR')}*%0A`;
+                    text += `  Valor: R$ ${pedido.valorTotal.toFixed(2)}%0A`;
+                    text += `  Status: ${pedido.status}%0A`;
+                    text += `  *Itens:*%0A`;
+                    pedido.itens.forEach(item => {
+                        const produto = produtos.find(p => p.id === item.produtoId);
+                        text += `    - ${item.quantidade}x ${produto?.nome || 'N/A'}%0A`;
                     });
                     text += `%0A`;
                 });
@@ -271,11 +321,12 @@ export const Reports: React.FC = () => {
                             onChange={(e) => setReportType(e.target.value as ReportType)}
                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                         >
-                            <option value="weekly-orders">Pedidos do Período</option>
-                            <option value="products-summary">Resumo de Produtos</option>
-                            <option value="factory-orders">Pedidos para Fábrica</option>
-                        </select>
-                    </div>
+                        <option value="weekly-orders">Pedidos do Período</option>
+                        <option value="products-summary">Resumo de Produtos</option>
+                        <option value="factory-orders">Pedidos para Fábrica</option>
+                        <option value="customer-history">Relatório por Cliente</option>
+                    </select>
+                </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -286,6 +337,7 @@ export const Reports: React.FC = () => {
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
+                            disabled={reportType === 'customer-history' && ignorePeriod}
                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
                     </div>
@@ -299,11 +351,47 @@ export const Reports: React.FC = () => {
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
+                            disabled={reportType === 'customer-history' && ignorePeriod}
                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
                     </div>
-                </div>
+                {reportType === 'customer-history' && (
+                    <div className="md:col-span-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                        <select
+                            value={selectedClientId}
+                            onChange={(e) => setSelectedClientId(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option value="">Selecione um cliente</option>
+                            {clientes.map(c => (
+                                <option key={c.id} value={c.id}>{c.nome}</option>
+                            ))}
+                        </select>
+                        <div className="mt-3">
+                            <label className="inline-flex items-center text-sm text-gray-700">
+                                <input
+                                    type="checkbox"
+                                    checked={ignorePeriod}
+                                    onChange={(e) => setIgnorePeriod(e.target.checked)}
+                                    className="mr-2"
+                                />
+                                Ignorar período (mostrar todo histórico)
+                            </label>
+                            <div className="mt-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIgnorePeriod(true)}
+                                    className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700"
+                                >
+                                    Todos os pedidos do cliente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
+        </div>
 
             {/* Botões de Exportação */}
             <div className="bg-white p-6 rounded-lg shadow-md">
@@ -326,7 +414,7 @@ export const Reports: React.FC = () => {
                         className="bg-blue-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
                     >
                         <Download size={18} className="mr-2" />
-                        Salvar Imagem
+                        {reportType === 'customer-history' ? 'Salvar Imagem do Cliente' : 'Salvar Imagem'}
                     </button>
 
                     <button
@@ -346,11 +434,19 @@ export const Reports: React.FC = () => {
                     <p className="text-center text-gray-600 mt-2">
                         {reportType === 'weekly-orders' ? 'Relatório de Pedidos' : 
                          reportType === 'products-summary' ? 'Relatório de Produtos' : 
-                         'Pedidos para Fábrica'}
+                         reportType === 'factory-orders' ? 'Pedidos para Fábrica' : 'Relatório por Cliente'}
                     </p>
                     <p className="text-center text-sm text-gray-500 mt-1">
-                        Período: {new Date(startDate).toLocaleDateString('pt-BR')} a {new Date(endDate).toLocaleDateString('pt-BR')}
+                        {reportType === 'customer-history' && ignorePeriod
+                            ? 'Período: Todos'
+                            : `Período: ${new Date(startDate).toLocaleDateString('pt-BR')} a ${new Date(endDate).toLocaleDateString('pt-BR')}`}
                     </p>
+                    {reportType === 'customer-history' && ignorePeriod && (
+                        <p className="text-center text-xs font-semibold text-indigo-700 mt-1">Histórico completo</p>
+                    )}
+                    {reportType === 'customer-history' && selectedClientId && (
+                        <p className="text-center text-sm text-gray-700 mt-1">Cliente: {clientes.find(c => c.id === selectedClientId)?.nome || 'N/A'}</p>
+                    )}
                 </div>
 
                 {reportType === 'weekly-orders' ? (
@@ -366,14 +462,197 @@ export const Reports: React.FC = () => {
                         produtosSummary={produtosSummary}
                         valorTotal={valorTotalPedidos}
                     />
-                ) : (
+                ) : reportType === 'factory-orders' ? (
                     <FactoryOrdersReport
                         entradasGrouped={entradasGrouped}
                         totalEntradas={totalEntradas}
                         totalUnidades={totalUnidadesEntradas}
                     />
+                ) : (
+                    <CustomerHistoryReport
+                        pedidos={filteredPedidos}
+                        produtos={produtos}
+                        totalPedidos={totalPedidos}
+                        valorTotal={valorTotalPedidos}
+                        cliente={clientes.find(c => c.id === selectedClientId)}
+                        selectedClientId={selectedClientId}
+                    />
                 )}
             </div>
+        </div>
+    );
+};
+
+const CustomerHistoryReport: React.FC<{
+    pedidos: any[];
+    produtos: any[];
+    totalPedidos: number;
+    valorTotal: number;
+    cliente: any;
+    selectedClientId: string;
+}> = ({ pedidos, produtos, totalPedidos, valorTotal, cliente, selectedClientId }) => {
+    const sortedPedidos = [...pedidos].sort((a, b) => b.data.getTime() - a.data.getTime());
+    const entregues = pedidos.filter(p => p.status === 'Entregue');
+    const pendentes = pedidos.filter(p => p.status === 'Pendente');
+    const valorEntregue = entregues.reduce((sum, p) => sum + p.valorTotal, 0);
+    const valorPendente = pendentes.reduce((sum, p) => sum + p.valorTotal, 0);
+
+    const now = new Date();
+    const pagos = pedidos.filter(p => p.statusPagamento === 'Pago');
+    const atrasados = pedidos.filter(p => p.statusPagamento !== 'Pago' && p.dataVencimentoPagamento.getTime() < now.getTime());
+    const pendPag = pedidos.filter(p => p.statusPagamento !== 'Pago' && p.dataVencimentoPagamento.getTime() >= now.getTime());
+    const valorPago = pagos.reduce((sum, p) => sum + (p.valorPago ?? p.valorTotal), 0);
+    const valorPendPag = pendPag.reduce((sum, p) => sum + p.valorTotal, 0);
+    const valorAtrasado = atrasados.reduce((sum, p) => sum + p.valorTotal, 0);
+
+    const produtosMap: Record<string, { nome: string; quantidade: number }> = {};
+    pedidos.forEach(p => {
+        p.itens.forEach((item: any) => {
+            const prod = produtos.find(pp => pp.id === item.produtoId);
+            if (prod) {
+                if (!produtosMap[prod.id]) {
+                    produtosMap[prod.id] = { nome: prod.nome, quantidade: 0 };
+                }
+                produtosMap[prod.id].quantidade += item.quantidade;
+            }
+        });
+    });
+    const produtosCliente = Object.values(produtosMap).sort((a, b) => b.quantidade - a.quantidade);
+    const maxProdQtd = produtosCliente.length > 0 ? Math.max(...produtosCliente.map(p => p.quantidade)) : 0;
+
+    const pedidosPorDiaMap: Record<string, number> = {};
+    pedidos.forEach(p => {
+        const key = p.data.toLocaleDateString('pt-BR');
+        pedidosPorDiaMap[key] = (pedidosPorDiaMap[key] || 0) + 1;
+    });
+    const pedidosPorDia = Object.entries(pedidosPorDiaMap)
+        .sort((a, b) => {
+            const [da] = a;
+            const [db] = b;
+            const pa = da.split('/');
+            const pb = db.split('/');
+            const ta = new Date(parseInt(pa[2], 10), parseInt(pa[1], 10) - 1, parseInt(pa[0], 10)).getTime();
+            const tb = new Date(parseInt(pb[2], 10), parseInt(pb[1], 10) - 1, parseInt(pb[0], 10)).getTime();
+            return tb - ta;
+        });
+    const maxDiaQtd = pedidosPorDia.length > 0 ? Math.max(...pedidosPorDia.map(([, qtd]) => qtd)) : 0;
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-indigo-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Total de Pedidos</p>
+                    <p className="text-2xl font-bold text-indigo-600">{totalPedidos}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Valor Total</p>
+                    <p className="text-2xl font-bold text-green-600">R$ {valorTotal.toFixed(2)}</p>
+                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-2">
+                <div className="bg-emerald-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Entregues</p>
+                    <p className="text-xl font-bold text-emerald-600">{entregues.length} pedidos</p>
+                    <p className="text-sm font-semibold text-emerald-700">R$ {valorEntregue.toFixed(2)}</p>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Pendentes</p>
+                    <p className="text-xl font-bold text-yellow-600">{pendentes.length} pedidos</p>
+                    <p className="text-sm font-semibold text-yellow-700">R$ {valorPendente.toFixed(2)}</p>
+                </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Pagos</p>
+                    <p className="text-xl font-bold text-blue-600">{pagos.length} pedidos</p>
+                    <p className="text-sm font-semibold text-blue-700">R$ {valorPago.toFixed(2)}</p>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Pagamento Pendente</p>
+                    <p className="text-xl font-bold text-orange-600">{pendPag.length} pedidos</p>
+                    <p className="text-sm font-semibold text-orange-700">R$ {valorPendPag.toFixed(2)}</p>
+                </div>
+                <div className="bg-rose-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Atrasados</p>
+                    <p className="text-xl font-bold text-rose-600">{atrasados.length} pedidos</p>
+                    <p className="text-sm font-semibold text-rose-700">R$ {valorAtrasado.toFixed(2)}</p>
+                </div>
+            </div>
+            {!selectedClientId || !cliente ? (
+                <p className="text-center text-gray-500 py-8">Selecione um cliente para visualizar o histórico.</p>
+            ) : (
+                <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-gray-800 mb-4">Histórico de {cliente.nome}</h3>
+                    {sortedPedidos.length === 0 ? (
+                        <p className="text-center text-gray-500 py-8">Nenhum pedido encontrado no período selecionado.</p>
+                    ) : (
+                        sortedPedidos.map(pedido => (
+                            <div key={pedido.id} className="border-l-4 border-indigo-600 pl-4 py-2">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h4 className="font-bold text-gray-800">{cliente.nome}</h4>
+                                        <p className="text-sm text-gray-600">{pedido.data.toLocaleDateString('pt-BR')} • Status: {pedido.status}</p>
+                                    </div>
+                                    <p className="font-bold text-gray-800">R$ {pedido.valorTotal.toFixed(2)}</p>
+                                </div>
+                                <div className="ml-4 space-y-1">
+                                    {pedido.itens.map((item: any, idx: number) => {
+                                        const produto = produtos.find(p => p.id === item.produtoId);
+                                        return (
+                                            <p key={idx} className="text-sm text-gray-600">• {item.quantidade}x {produto?.nome || 'N/A'}</p>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))
+                    )}
+                    <div className="mt-6">
+                        <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center"><TrendingUp size={20} className="mr-2" />Distribuição por Produto do Cliente</h4>
+                        {produtosCliente.length === 0 ? (
+                            <p className="text-center text-gray-500 py-4">Sem itens no período.</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {produtosCliente.map((item, idx) => {
+                                    const percentage = maxProdQtd > 0 ? (item.quantidade / maxProdQtd) * 100 : 0;
+                                    return (
+                                        <div key={idx}>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-gray-700">{item.nome}</span>
+                                                <span className="font-semibold text-gray-800">{item.quantidade}</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-3">
+                                                <div className="bg-indigo-600 h-3 rounded-full transition-all duration-500" style={{ width: `${percentage}%` }} />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                    <div className="mt-6">
+                        <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center"><TrendingUp size={20} className="mr-2" />Pedidos por Dia</h4>
+                        {pedidosPorDia.length === 0 ? (
+                            <p className="text-center text-gray-500 py-4">Sem pedidos no período.</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {pedidosPorDia.map(([dia, qtd], idx) => {
+                                    const percentage = maxDiaQtd > 0 ? (qtd / maxDiaQtd) * 100 : 0;
+                                    return (
+                                        <div key={idx}>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-gray-700">{dia}</span>
+                                                <span className="font-semibold text-gray-800">{qtd}</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-3">
+                                                <div className="bg-indigo-600 h-3 rounded-full transition-all duration-500" style={{ width: `${percentage}%` }} />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
