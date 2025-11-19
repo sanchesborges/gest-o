@@ -154,19 +154,55 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
       const mobileItems = element.querySelector('.md\\:hidden');
       const desktopTable = element.querySelector('.hidden.md\\:block');
       
+      // Identificar ancestrais que podem cortar o conteúdo no mobile
+      const overlay = element.closest('.modal-overlay') as HTMLElement | null;
+      const modalContent = element.closest('.modal-content') as HTMLElement | null;
+      const scrollContainer = document.getElementById('note-scroll-container') as HTMLElement | null;
+      
       // Salvar estilos originais
       const originalParentOverflow = parent?.style.overflow;
       const originalParentMaxHeight = parent?.style.maxHeight;
       const originalMobileDisplay = mobileItems ? (mobileItems as HTMLElement).style.display : '';
       const originalDesktopDisplay = desktopTable ? (desktopTable as HTMLElement).style.display : '';
+      const originalOverlayOverflow = overlay?.style.overflow;
+      const originalOverlayHeight = overlay?.style.height;
+      const originalModalMaxHeight = modalContent?.style.maxHeight;
+      const originalModalOverflow = modalContent?.style.overflow;
+      const originalModalTransform = modalContent?.style.transform;
+      const originalScrollOverflow = scrollContainer?.style.overflow;
+      const originalScrollMaxHeight = scrollContainer?.style.maxHeight;
+      const originalBodyPosition = document.body.style.position;
+      const originalBodyTop = document.body.style.top;
+      const originalBodyOverflow = document.body.style.overflow;
+      const originalBodyWidth = document.body.style.width;
       
-      // Remover restrições temporariamente
+      // Remover restrições temporariamente nos ancestrais para evitar corte
+      if (overlay) {
+        overlay.style.overflow = 'visible';
+        overlay.style.height = 'auto';
+      }
+      if (modalContent) {
+        modalContent.style.maxHeight = 'none';
+        modalContent.style.overflow = 'visible';
+        // Remover transform para evitar clipping em renderização
+        modalContent.style.transform = 'none';
+      }
+      if (scrollContainer) {
+        scrollContainer.style.overflow = 'visible';
+        scrollContainer.style.maxHeight = 'none';
+      }
       if (parent) {
         parent.style.overflow = 'visible';
         parent.style.maxHeight = 'none';
       }
       
-      // Forçar tabela desktop a aparecer e esconder versão mobile
+      // Neutralizar body fixado pelo modal para não afetar cálculo de scroll no mobile
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.overflow = 'visible';
+      document.body.style.width = '100%';
+      
+      // Forçar tabela desktop a aparecer e esconder versão mobile (para imagem mais completa)
       if (mobileItems) {
         (mobileItems as HTMLElement).style.display = 'none';
       }
@@ -177,17 +213,39 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
       // Aguardar renderização
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Importar e usar html2canvas
+      // Importar e usar html2canvas com configurações que evitam corte
       const html2canvas = (await import('html2canvas')).default;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: dpr,
         backgroundColor: '#ffffff',
         logging: false,
         useCORS: true,
         allowTaint: true,
+        // Garantir que o viewport e offsets não cortem conteúdo
+        scrollY: 0,
+        scrollX: 0,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+        // Forçar tamanho do canvas ao tamanho total do conteúdo
+        width: element.scrollWidth,
+        height: element.scrollHeight,
       });
       
       // Restaurar estilos
+      if (overlay) {
+        overlay.style.overflow = originalOverlayOverflow || '';
+        overlay.style.height = originalOverlayHeight || '';
+      }
+      if (modalContent) {
+        modalContent.style.maxHeight = originalModalMaxHeight || '';
+        modalContent.style.overflow = originalModalOverflow || '';
+        modalContent.style.transform = originalModalTransform || '';
+      }
+      if (scrollContainer) {
+        scrollContainer.style.overflow = originalScrollOverflow || '';
+        scrollContainer.style.maxHeight = originalScrollMaxHeight || '';
+      }
       if (parent) {
         parent.style.overflow = originalParentOverflow || '';
         parent.style.maxHeight = originalParentMaxHeight || '';
@@ -198,6 +256,10 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
       if (desktopTable) {
         (desktopTable as HTMLElement).style.display = originalDesktopDisplay;
       }
+      document.body.style.position = originalBodyPosition;
+      document.body.style.top = originalBodyTop;
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.width = originalBodyWidth;
       
       const imageData = canvas.toDataURL('image/png', 1.0);
       setIsGeneratingImage(false);
