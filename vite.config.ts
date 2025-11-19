@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => {
           registerType: 'autoUpdate',
           injectRegister: false, // Desabilitar registro automático
           selfDestroying: true, // Remover SW existente
+          devOptions: { enabled: false }, // Desabilitar completamente PWA em desenvolvimento
           includeAssets: ['favicon.svg', 'favicon.ico', 'icon-192.svg', 'icon-512.svg'],
           manifest: {
             name: 'Maná - Gestão de Produtos',
@@ -59,7 +60,7 @@ export default defineConfig(({ mode }) => {
             navigateFallbackDenylist: [/^\/api/, /supabase\.co/],
             runtimeCaching: [
               {
-                urlPattern: /^https:\/\/cdn\.tailwindcss\.com\/.*/i,
+                urlPattern: /^https:\/\/cdn\.tailwindcss\.com\/.*$/i,
                 handler: 'CacheFirst',
                 options: {
                   cacheName: 'tailwind-cache',
@@ -73,7 +74,7 @@ export default defineConfig(({ mode }) => {
                 }
               },
               {
-                urlPattern: /^https:\/\/aistudiocdn\.com\/.*/i,
+                urlPattern: /^https:\/\/aistudiocdn\.com\/.*$/i,
                 handler: 'CacheFirst',
                 options: {
                   cacheName: 'react-cdn-cache',
@@ -87,7 +88,7 @@ export default defineConfig(({ mode }) => {
                 }
               },
               {
-                urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+                urlPattern: /^https:\/\/.*\.supabase\.co\/.*$/i,
                 handler: 'NetworkOnly',
                 options: {
                   cacheName: 'supabase-api',

@@ -96,6 +96,15 @@
           }
         });
       }
+
+      // Garantir que nenhum SW será registrado
+      window.addEventListener('load', () => {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            registrations.forEach(reg => reg.unregister());
+          });
+        }
+      });
     </script>
     
     <script type="module" src="/index.tsx"></script>

@@ -174,8 +174,17 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           statusPagamento: p.status_pagamento as StatusPagamento,
           dataVencimentoPagamento: new Date(p.data_vencimento_pagamento),
           assinatura: p.assinatura,
-          valorPago: p.valor_pago !== null && p.valor_pago !== undefined ? parseFloat(p.valor_pago) : undefined,
-          pagamentoParcial: p.pagamento_parcial || false,
+          // Fallback: se marcado como Pago mas valor_pago não existe/é zero, usar valor_total
+          valorPago: (() => {
+            const vp = p.valor_pago !== null && p.valor_pago !== undefined ? parseFloat(p.valor_pago) : undefined;
+            const vt = parseFloat(p.valor_total);
+            if ((vp === undefined || vp === 0) && p.status_pagamento === 'Pago') {
+              return vt;
+            }
+            return vp;
+          })(),
+          // Força pagamentoParcial = false quando status é Pago
+          pagamentoParcial: p.status_pagamento === 'Pago' ? false : (p.pagamento_parcial || false),
           dataPagamento: p.data_pagamento ? new Date(p.data_pagamento) : undefined,
           metodoPagamentoEntrega: p.metodo_pagamento_entrega,
           itens: p.itens_pedido.map((item: any) => ({
@@ -811,10 +820,17 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         console.error('Erro ao salvar pagamento:', pagamentoError);
       }
 
-      // Update pedido status
+      // Update pedido status + payment fields
+      const nowIso = new Date().toISOString();
       const { error: pedidoError } = await supabase
         .from('pedidos')
-        .update({ status_pagamento: StatusPagamento.PAGO })
+        .update({ 
+          status_pagamento: StatusPagamento.PAGO,
+          valor_pago: valor,
+          pagamento_parcial: false,
+          data_pagamento: nowIso,
+          metodo_pagamento_entrega: metodo
+        })
         .eq('id', pedidoId);
 
       if (pedidoError) {
@@ -822,13 +838,33 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
 
       setPagamentos(prev => [...prev, newPagamento]);
-      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, statusPagamento: StatusPagamento.PAGO } : p));
+      setPedidos(prev => prev.map(p => p.id === pedidoId 
+        ? { 
+            ...p, 
+            statusPagamento: StatusPagamento.PAGO,
+            valorPago: valor,
+            pagamentoParcial: false,
+            dataPagamento: new Date(),
+            metodoPagamentoEntrega: metodo
+          } 
+        : p
+      ));
 
     } catch (error) {
       console.error('Erro ao adicionar pagamento:', error);
       saveToStorage('pagamentos', [...pagamentos, newPagamento]);
       setPagamentos(prev => [...prev, newPagamento]);
-      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, statusPagamento: StatusPagamento.PAGO } : p));
+      setPedidos(prev => prev.map(p => p.id === pedidoId 
+        ? { 
+            ...p, 
+            statusPagamento: StatusPagamento.PAGO,
+            valorPago: valor,
+            pagamentoParcial: false,
+            dataPagamento: new Date(),
+            metodoPagamentoEntrega: metodo
+          } 
+        : p
+      ));
     }
   };
 
@@ -866,10 +902,9 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         updateData.valor_pago = pedido.valorTotal;
         updateData.pagamento_parcial = false;
       } else if (pagamentoParcial && valorPago) {
-        // Se pagamento parcial, continua PENDENTE mas atualiza o valor total
+        // Se pagamento parcial, continua PENDENTE sem alterar o valor total
         updateData.status_pagamento = StatusPagamento.PENDENTE;
-        // Atualizar valor total do pedido (abater a entrada)
-        updateData.valor_total = pedido.valorTotal - valorPago;
+        // Removido: não alterar o valor_total do pedido
       }
 
       const { error } = await supabase
@@ -903,7 +938,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
             updatedPedido.pagamentoParcial = false;
           } else if (pagamentoParcial && valorPago) {
             updatedPedido.statusPagamento = StatusPagamento.PENDENTE;
-            updatedPedido.valorTotal = pedido.valorTotal - valorPago;
+            // Removido: não alterar o valorTotal local
           }
 
           return updatedPedido;
@@ -1025,6 +1060,19 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           statusPagamento: p.status_pagamento as StatusPagamento,
           dataVencimentoPagamento: new Date(p.data_vencimento_pagamento),
           assinatura: p.assinatura,
+          // Fallback: se marcado como Pago mas valor_pago não existe/é zero, usar valor_total
+          valorPago: (() => {
+            const vp = p.valor_pago !== null && p.valor_pago !== undefined ? parseFloat(p.valor_pago) : undefined;
+            const vt = parseFloat(p.valor_total);
+            if ((vp === undefined || vp === 0) && p.status_pagamento === 'Pago') {
+              return vt;
+            }
+            return vp;
+          })(),
+          // Força pagamentoParcial = false quando status é Pago
+          pagamentoParcial: p.status_pagamento === 'Pago' ? false : (p.pagamento_parcial || false),
+          dataPagamento: p.data_pagamento ? new Date(p.data_pagamento) : undefined,
+          metodoPagamentoEntrega: p.metodo_pagamento_entrega,
           itens: p.itens_pedido.map((item: any) => ({
             produtoId: item.produto_id,
             quantidade: item.quantidade,
