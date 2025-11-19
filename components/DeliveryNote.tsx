@@ -175,6 +175,8 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
       const originalBodyTop = document.body.style.top;
       const originalBodyOverflow = document.body.style.overflow;
       const originalBodyWidth = document.body.style.width;
+      const originalElementWidth = element.style.width;
+      const originalElementMaxWidth = element.style.maxWidth;
       
       // Remover restrições temporariamente nos ancestrais para evitar corte
       if (overlay) {
@@ -202,13 +204,13 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
       document.body.style.overflow = 'visible';
       document.body.style.width = '100%';
       
-      // Forçar tabela desktop a aparecer e esconder versão mobile (para imagem mais completa)
-      if (mobileItems) {
-        (mobileItems as HTMLElement).style.display = 'none';
-      }
-      if (desktopTable) {
-        (desktopTable as HTMLElement).style.display = 'block';
-      }
+      // Preservar layout mobile durante a captura
+      if (mobileItems) { /* manter layout mobile */ }
+      if (desktopTable) { /* manter layout mobile */ }
+      
+      // Definir largura fixa temporária para melhorar o alinhamento e evitar quebras
+      element.style.width = '720px';
+      element.style.maxWidth = '720px';
       
       // Aguardar renderização
       await new Promise(resolve => setTimeout(resolve, 200));
@@ -250,6 +252,10 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
         parent.style.overflow = originalParentOverflow || '';
         parent.style.maxHeight = originalParentMaxHeight || '';
       }
+      // Restaurar largura do elemento
+      element.style.width = originalElementWidth;
+      element.style.maxWidth = originalElementMaxWidth;
+      
       if (mobileItems) {
         (mobileItems as HTMLElement).style.display = originalMobileDisplay;
       }
@@ -421,7 +427,7 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
 
         {/* Content */}
         <div className="flex-grow overflow-y-auto bg-gray-100 p-4 overscroll-contain -webkit-overflow-scrolling-touch" id="note-scroll-container">
-            <div ref={noteRef} className="space-y-4 bg-white p-6 rounded-lg shadow-lg min-h-full">
+            <div ref={noteRef} className="space-y-4 bg-white p-6 rounded-lg shadow-lg min-h-full max-w-[720px] mx-auto">
                 {/* Cabeçalho da Nota */}
                 <div className="text-center border-b-2 border-indigo-600 pb-4 mb-4">
                     <h1 className="text-3xl font-bold text-indigo-600">MANÁ</h1>
@@ -430,7 +436,7 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
                 </div>
 
             <div className="p-4 border-2 border-gray-300 rounded-lg bg-gray-50 space-y-2">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                     <div>
                         <p className="text-xs text-gray-500 uppercase">Pedido</p>
                         <p className="font-bold text-gray-800">{pedido.id.toUpperCase()}</p>
@@ -455,26 +461,26 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
             </div>
             
             {/* Mobile Items View */}
-            <div className="md:hidden space-y-3">
+            <div className="md:hidden space-y-2">
               <h4 className="font-semibold text-gray-800">Itens do Pedido:</h4>
               {pedido.itens.map(item => {
                 const produto = produtos.find(p => p.id === item.produtoId);
                 return (
-                  <div key={item.produtoId} className="bg-white border rounded-lg p-3">
+                  <div key={item.produtoId} className="bg-white border rounded-lg p-2">
                     <p className="font-semibold text-gray-900">{produto?.nome}</p>
                     <p className="text-sm text-gray-600">Qtd: {item.quantidade} x R$ {item.precoUnitario.toFixed(2)}</p>
                     <p className="text-right font-bold text-gray-800 mt-1">R$ {(item.quantidade * item.precoUnitario).toFixed(2)}</p>
                   </div>
                 );
               })}
-               <div className="font-semibold text-gray-900 bg-gray-100 p-3 rounded-lg flex justify-between items-center mt-3">
+               <div className="font-semibold text-gray-900 bg-gray-100 p-2 rounded-lg flex justify-between items-center mt-2">
                   <span className="text-base">TOTAL:</span>
                   <span className="text-lg">R$ {pedido.valorTotal.toFixed(2)}</span>
               </div>
               
               {/* Informações de Pagamento - Mobile */}
               {pedido.status === StatusPedido.ENTREGUE && pedido.valorPago !== undefined && pedido.valorPago >= 0 && (
-                <div className={`mt-3 p-3 border-2 rounded-lg ${
+                <div className={`mt-2 p-2 border rounded-lg ${
                   pedido.valorPago === 0 
                     ? 'bg-red-50 border-red-500' 
                     : pedido.valorPago >= pedido.valorTotal 
@@ -491,7 +497,7 @@ export const DeliveryNote: React.FC<{ pedido: Pedido; onClose: () => void }> = (
                       </span>
                     </div>
                     
-                    <div className={`text-xs font-medium text-left py-1 rounded mt-2 ${
+                    <div className={`text-xs font-medium text-left py-0.5 rounded mt-2 ${
                       pedido.valorPago === 0 
                         ? 'text-red-600 bg-red-100' 
                         : pedido.valorPago >= pedido.valorTotal 
