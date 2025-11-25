@@ -329,6 +329,16 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
         ? pedidos.filter(p => p.entregadorId === entregadorId)
         : pedidos;
 
+    const pedidosUltimos7Dias = React.useMemo(() => {
+        const limite = new Date();
+        limite.setHours(0, 0, 0, 0);
+        limite.setDate(limite.getDate() - 7);
+        return initialPedidos.filter(p => {
+            const d = new Date(p.data);
+            return d >= limite;
+        });
+    }, [initialPedidos]);
+
     const handleToggleSelect = (pedidoId: string) => {
         setSelectedOrders(prev => {
             const newSet = new Set(prev);
@@ -380,10 +390,11 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
         setSelectedOrder(null);
     }
 
-    const filteredPedidos = initialPedidos.filter(pedido => {
+    const filteredPedidos = pedidosUltimos7Dias.filter(pedido => {
         const statusMatch = statusFilter === 'Todos' || pedido.status === statusFilter;
         const clientMatch = clientFilter === 'Todos' || pedido.clienteId === clientFilter;
-        return statusMatch && clientMatch;
+        const notPaid = pedido.statusPagamento !== StatusPagamento.PAGO;
+        return statusMatch && clientMatch && notPaid;
     }).sort((a, b) => b.data.getTime() - a.data.getTime());
 
     // Log para debug de renderização do modal
@@ -498,24 +509,28 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
             )}
 
             <div className="bg-white p-4 rounded-lg shadow-md">
-                <div className="flex items-center mb-2">
+                <div className="flex items-center mb-3">
                     <Filter size={18} className="text-gray-600 mr-2" />
                     <h3 className="text-lg font-semibold text-gray-700">Filtros</h3>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
                     <div className="w-full sm:w-1/2">
-                        <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700">Status</label>
-                        <select
-                            id="statusFilter"
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value as StatusPedido | 'Todos')}
-                            className="mt-1 block w-full p-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                        >
-                            <option value="Todos">Todos</option>
-                            {Object.values(StatusPedido).map(status => (
-                                <option key={status} value={status}>{status}</option>
+                        <span className="block text-sm font-medium text-gray-700 mb-2">Status</span>
+                        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                            {(['Todos', StatusPedido.PENDENTE, StatusPedido.ENTREGUE, StatusPedido.CANCELADO] as (StatusPedido | 'Todos')[]).map(s => (
+                                <button
+                                    key={s}
+                                    onClick={() => setStatusFilter(s)}
+                                    className={`py-2 px-4 rounded-lg font-medium transition-all ${
+                                        statusFilter === s
+                                            ? 'bg-indigo-600 text-white shadow-md'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    {s}
+                                </button>
                             ))}
-                        </select>
+                        </div>
                     </div>
                     <div className="w-full sm:w-1/2">
                         <label htmlFor="clientFilter" className="block text-sm font-medium text-gray-700">Cliente</label>
@@ -533,6 +548,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
                         </select>
                     </div>
                 </div>
+                <p className="text-xs text-gray-500 mt-3">Mostrando apenas pedidos dos últimos 7 dias.</p>
             </div>
 
             {/* Renderizar conteúdo baseado na aba ativa (apenas para entregador) */}
