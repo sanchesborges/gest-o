@@ -9,18 +9,32 @@ export const SalesReport: React.FC = () => {
 
   // Filtrar pedidos por data
   const pedidosFiltrados = useMemo(() => {
-    const hoje = new Date();
     const pedidosEntregues = pedidos.filter(p => p.status === StatusPedido.ENTREGUE);
 
     if (filtroData === 'todos') return pedidosEntregues;
 
-    const dataLimite = new Date();
-    if (filtroData === 'mes') {
-      dataLimite.setMonth(dataLimite.getMonth() - 1);
-    } else if (filtroData === 'semana') {
-      dataLimite.setDate(dataLimite.getDate() - 7);
+    if (filtroData === 'semana') {
+      const hoje = new Date();
+      const diaSemana = hoje.getDay();
+      const diffSegunda = (diaSemana + 6) % 7;
+      const segundaAtual = new Date(hoje);
+      segundaAtual.setHours(0, 0, 0, 0);
+      segundaAtual.setDate(hoje.getDate() - diffSegunda);
+
+      const inicioSemana = new Date(segundaAtual);
+      inicioSemana.setDate(segundaAtual.getDate() - 7);
+      const fimSemana = new Date(segundaAtual);
+      fimSemana.setDate(segundaAtual.getDate() - 1);
+      fimSemana.setHours(23, 59, 59, 999);
+
+      return pedidosEntregues.filter(p => {
+        const d = new Date(p.data);
+        return d >= inicioSemana && d <= fimSemana;
+      });
     }
 
+    const dataLimite = new Date();
+    dataLimite.setMonth(dataLimite.getMonth() - 1);
     return pedidosEntregues.filter(p => new Date(p.data) >= dataLimite);
   }, [pedidos, filtroData]);
 

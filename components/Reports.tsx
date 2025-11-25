@@ -4,7 +4,7 @@ import { FileText, Download, Share2, Calendar, Package, TrendingUp, Filter } fro
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
-type ReportType = 'weekly-orders' | 'products-summary' | 'factory-orders' | 'customer-history';
+type ReportType = 'weekly-orders' | 'products-summary' | 'factory-orders' | 'customer-history' | 'paid-notes' | 'pending-notes';
 type ExportFormat = 'whatsapp-text' | 'whatsapp-image' | 'pdf';
 
 export const Reports: React.FC = () => {
@@ -31,6 +31,12 @@ export const Reports: React.FC = () => {
             if (!selectedClientId) return false;
             if (ignorePeriod) return p.clienteId === selectedClientId;
             return inRange && p.clienteId === selectedClientId;
+        }
+        if (reportType === 'paid-notes') {
+            return (ignorePeriod || inRange) && p.statusPagamento === 'Pago';
+        }
+        if (reportType === 'pending-notes') {
+            return (ignorePeriod || inRange) && p.statusPagamento !== 'Pago';
         }
         return inRange;
     });
@@ -169,6 +175,31 @@ export const Reports: React.FC = () => {
                     text += `%0A`;
                 });
 
+            return text;
+        } else if (reportType === 'paid-notes' || reportType === 'pending-notes') {
+            const isPaid = reportType === 'paid-notes';
+            const title = isPaid ? '*NOTAS PAGAS POR CLIENTE - MANA*%0A' : '*NOTAS PENDENTES POR CLIENTE - MANA*%0A';
+            let text = title;
+            text += `================================%0A`;
+            text += `*Periodo:* ${startFormatted} a ${endFormatted}%0A%0A`;
+            const relevant = filteredPedidos.filter(p => isPaid ? p.statusPagamento === 'Pago' : p.statusPagamento !== 'Pago');
+            const groups: Record<string, { nome: string; total: number; pedidos: any[] }> = {};
+            relevant.forEach(p => {
+                const c = clientes.find(cc => cc.id === p.clienteId);
+                const key = p.clienteId || 'N/A';
+                if (!groups[key]) groups[key] = { nome: c?.nome || 'N/A', total: 0, pedidos: [] };
+                groups[key].pedidos.push(p);
+                groups[key].total += isPaid ? (p.valorPago ?? p.valorTotal) : p.valorTotal;
+            });
+            const ordered = Object.values(groups).sort((a, b) => b.total - a.total);
+            ordered.forEach(g => {
+                text += `*${g.nome}*%0A`;
+                text += `  Total: R$ ${g.total.toFixed(2)} (${g.pedidos.length} notas)%0A`;
+                g.pedidos.sort((a, b) => b.data.getTime() - a.data.getTime()).forEach(p => {
+                    text += `    - ${p.data.toLocaleDateString('pt-BR')} • R$ ${p.valorTotal.toFixed(2)} • ${p.statusPagamento}%0A`;
+                });
+                text += `%0A`;
+            });
             return text;
         } else {
             const cliente = clientes.find(c => c.id === selectedClientId);
@@ -325,6 +356,8 @@ export const Reports: React.FC = () => {
                         <option value="products-summary">Resumo de Produtos</option>
                         <option value="factory-orders">Pedidos para Fábrica</option>
                         <option value="customer-history">Relatório por Cliente</option>
+                        <option value="paid-notes">Notas Pagas por Cliente</option>
+                        <option value="pending-notes">Notas Pendentes por Cliente</option>
                     </select>
                 </div>
 
@@ -337,7 +370,7 @@ export const Reports: React.FC = () => {
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            disabled={reportType === 'customer-history' && ignorePeriod}
+                            disabled={(reportType === 'customer-history' || reportType === 'paid-notes' || reportType === 'pending-notes') && ignorePeriod}
                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
                     </div>
@@ -351,7 +384,7 @@ export const Reports: React.FC = () => {
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            disabled={reportType === 'customer-history' && ignorePeriod}
+                            disabled={(reportType === 'customer-history' || reportType === 'paid-notes' || reportType === 'pending-notes') && ignorePeriod}
                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
                     </div>
@@ -385,6 +418,30 @@ export const Reports: React.FC = () => {
                                     className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700"
                                 >
                                     Todos os pedidos do cliente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {(reportType === 'paid-notes' || reportType === 'pending-notes') && (
+                    <div className="md:col-span-3">
+                        <div className="mt-1">
+                            <label className="inline-flex items-center text-sm text-gray-700">
+                                <input
+                                    type="checkbox"
+                                    checked={ignorePeriod}
+                                    onChange={(e) => setIgnorePeriod(e.target.checked)}
+                                    className="mr-2"
+                                />
+                                Ignorar período (mostrar todo histórico)
+                            </label>
+                            <div className="mt-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIgnorePeriod(true)}
+                                    className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700"
+                                >
+                                    Ver histórico completo
                                 </button>
                             </div>
                         </div>
@@ -434,14 +491,16 @@ export const Reports: React.FC = () => {
                     <p className="text-center text-gray-600 mt-2">
                         {reportType === 'weekly-orders' ? 'Relatório de Pedidos' : 
                          reportType === 'products-summary' ? 'Relatório de Produtos' : 
-                         reportType === 'factory-orders' ? 'Pedidos para Fábrica' : 'Relatório por Cliente'}
+                         reportType === 'factory-orders' ? 'Pedidos para Fábrica' : 
+                         reportType === 'paid-notes' ? 'Notas Pagas por Cliente' : 
+                         reportType === 'pending-notes' ? 'Notas Pendentes por Cliente' : 'Relatório por Cliente'}
                     </p>
                     <p className="text-center text-sm text-gray-500 mt-1">
-                        {reportType === 'customer-history' && ignorePeriod
+                        {(reportType === 'customer-history' || reportType === 'paid-notes' || reportType === 'pending-notes') && ignorePeriod
                             ? 'Período: Todos'
                             : `Período: ${new Date(startDate).toLocaleDateString('pt-BR')} a ${new Date(endDate).toLocaleDateString('pt-BR')}`}
                     </p>
-                    {reportType === 'customer-history' && ignorePeriod && (
+                    {(reportType === 'customer-history' || reportType === 'paid-notes' || reportType === 'pending-notes') && ignorePeriod && (
                         <p className="text-center text-xs font-semibold text-indigo-700 mt-1">Histórico completo</p>
                     )}
                     {reportType === 'customer-history' && selectedClientId && (
@@ -468,6 +527,10 @@ export const Reports: React.FC = () => {
                         totalEntradas={totalEntradas}
                         totalUnidades={totalUnidadesEntradas}
                     />
+                ) : reportType === 'paid-notes' ? (
+                    <PaidNotesReport pedidos={filteredPedidos} clientes={clientes} />
+                ) : reportType === 'pending-notes' ? (
+                    <PendingNotesReport pedidos={filteredPedidos} clientes={clientes} />
                 ) : (
                     <CustomerHistoryReport
                         pedidos={filteredPedidos}
@@ -932,3 +995,64 @@ const FactoryOrdersReport: React.FC<{
         </div>
     );
 };
+
+const GroupedNotesByClient: React.FC<{
+    pedidos: any[];
+    clientes: any[];
+    title: string;
+}> = ({ pedidos, clientes, title }) => {
+    const groups: Record<string, { clienteNome: string; pedidos: any[]; total: number }> = {};
+    pedidos.forEach(p => {
+        const c = clientes.find(cc => cc.id === p.clienteId);
+        const key = p.clienteId || 'N/A';
+        if (!groups[key]) {
+            groups[key] = { clienteNome: c?.nome || 'N/A', pedidos: [], total: 0 };
+        }
+        groups[key].pedidos.push(p);
+        groups[key].total += p.statusPagamento === 'Pago' ? (p.valorPago ?? p.valorTotal) : p.valorTotal;
+    });
+    const ordered = Object.values(groups).sort((a, b) => b.total - a.total);
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-indigo-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Clientes</p>
+                    <p className="text-2xl font-bold text-indigo-600">{ordered.length}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Total</p>
+                    <p className="text-2xl font-bold text-green-600">R$ {ordered.reduce((s, g) => s + g.total, 0).toFixed(2)}</p>
+                </div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">{title}</h3>
+            {ordered.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">Nenhuma nota encontrada no período.</p>
+            ) : (
+                ordered.map(g => (
+                    <div key={g.clienteNome} className="border-l-4 border-indigo-600 pl-4 py-2">
+                        <div className="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 className="font-bold text-gray-800">{g.clienteNome}</h4>
+                                <p className="text-sm text-gray-600">{g.pedidos.length} notas</p>
+                            </div>
+                            <p className="font-bold text-gray-800">R$ {g.total.toFixed(2)}</p>
+                        </div>
+                        <div className="ml-4 space-y-1">
+                            {g.pedidos.sort((a, b) => b.data.getTime() - a.data.getTime()).map((p: any) => (
+                                <p key={p.id} className="text-sm text-gray-600">• {p.data.toLocaleDateString('pt-BR')} • R$ {p.valorTotal.toFixed(2)} • {p.statusPagamento}</p>
+                            ))}
+                        </div>
+                    </div>
+                ))
+            )}
+        </div>
+    );
+};
+
+const PaidNotesReport: React.FC<{ pedidos: any[]; clientes: any[] }> = ({ pedidos, clientes }) => (
+    <GroupedNotesByClient pedidos={pedidos} clientes={clientes} title="Notas Pagas por Cliente" />
+);
+
+const PendingNotesReport: React.FC<{ pedidos: any[]; clientes: any[] }> = ({ pedidos, clientes }) => (
+    <GroupedNotesByClient pedidos={pedidos} clientes={clientes} title="Notas Pendentes por Cliente" />
+);
