@@ -28,6 +28,13 @@ export const Reports: React.FC = () => {
         if (ignorePeriod) qs.set('ignore', '1');
         navigate(`/relatorios/cliente/${clientId}/notas-pagas?${qs.toString()}`);
     };
+    const handleOpenClientPendingNotes = (clientId: string, clientName: string, notes: any[]) => {
+        const qs = new URLSearchParams();
+        qs.set('start', startDate);
+        qs.set('end', endDate);
+        if (ignorePeriod) qs.set('ignore', '1');
+        navigate(`/relatorios/cliente/${clientId}/notas-pendentes?${qs.toString()}`);
+    };
 
     // Filtrar pedidos por período
     const filteredPedidos = pedidos.filter(p => {
@@ -540,7 +547,7 @@ export const Reports: React.FC = () => {
                 ) : reportType === 'paid-notes' ? (
                     <PaidNotesReport pedidos={filteredPedidos} clientes={clientes} onOpenClient={handleOpenClientNotes} />
                 ) : reportType === 'pending-notes' ? (
-                    <PendingNotesReport pedidos={filteredPedidos} clientes={clientes} />
+                    <PendingNotesReport pedidos={filteredPedidos} clientes={clientes} onOpenClient={handleOpenClientPendingNotes} />
                 ) : (
                     <CustomerHistoryReport
                         pedidos={filteredPedidos}
@@ -1067,6 +1074,6 @@ const PaidNotesReport: React.FC<{ pedidos: any[]; clientes: any[]; onOpenClient:
     <GroupedNotesByClient pedidos={pedidos} clientes={clientes} title="Notas Pagas por Cliente" onOpen={onOpenClient} />
 );
 
-const PendingNotesReport: React.FC<{ pedidos: any[]; clientes: any[] }> = ({ pedidos, clientes }) => (
-    <GroupedNotesByClient pedidos={pedidos} clientes={clientes} title="Notas Pendentes por Cliente" />
+const PendingNotesReport: React.FC<{ pedidos: any[]; clientes: any[]; onOpenClient: (clientId: string, clienteNome: string, pedidos: any[]) => void }> = ({ pedidos, clientes, onOpenClient }) => (
+    <GroupedNotesByClient pedidos={pedidos} clientes={clientes} title="Notas Pendentes por Cliente" onOpen={onOpenClient} />
 );
