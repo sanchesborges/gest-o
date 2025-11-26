@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useAppData } from '../hooks/useAppData';
-import { FileText, Download, Share2, Calendar, Package, TrendingUp, Filter } from 'lucide-react';
+import { FileText, Download, Share2, Calendar, Package, TrendingUp, Filter, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -19,6 +19,14 @@ export const Reports: React.FC = () => {
     const [selectedClientId, setSelectedClientId] = useState<string>('');
     const [ignorePeriod, setIgnorePeriod] = useState<boolean>(false);
     const reportRef = useRef<HTMLDivElement>(null);
+    const [clientNotesOpen, setClientNotesOpen] = useState<boolean>(false);
+    const [clientNotesName, setClientNotesName] = useState<string>('');
+    const [clientNotesList, setClientNotesList] = useState<any[]>([]);
+    const handleOpenClientNotes = (clientId: string, clientName: string, notes: any[]) => {
+        setClientNotesName(clientName);
+        setClientNotesList(notes);
+        setClientNotesOpen(true);
+    };
 
     // Filtrar pedidos por período
     const filteredPedidos = pedidos.filter(p => {
@@ -328,6 +336,41 @@ export const Reports: React.FC = () => {
 
     return (
         <div className="space-y-6 p-6 pt-8">
+            {clientNotesOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={() => setClientNotesOpen(false)}>
+                    <div className="bg-white p-6 rounded-lg shadow-2xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-gray-800">Notas Pagas • {clientNotesName}</h3>
+                            <button onClick={() => setClientNotesOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+                        </div>
+                        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                            {clientNotesList.length === 0 ? (
+                                <p className="text-center text-gray-500 py-8">Sem notas pagas.</p>
+                            ) : (
+                                clientNotesList
+                                    .slice()
+                                    .sort((a, b) => b.data.getTime() - a.data.getTime())
+                                    .map((p: any) => (
+                                        <div key={p.id} className="border border-gray-200 rounded-lg p-3">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <p className="text-sm text-gray-600">{p.data.toLocaleDateString('pt-BR')}</p>
+                                                <p className="font-bold text-gray-800">R$ {p.valorTotal.toFixed(2)}</p>
+                                            </div>
+                                            <div className="ml-2 space-y-1">
+                                                {p.itens.map((item: any, idx: number) => {
+                                                    const produto = produtos.find(pp => pp.id === item.produtoId);
+                                                    return (
+                                                        <p key={idx} className="text-sm text-gray-600">• {item.quantidade}x {produto?.nome || 'N/A'}</p>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <h2 className="text-3xl font-bold text-gray-800 flex items-center">
                     <FileText className="mr-3" size={32} />
@@ -528,7 +571,7 @@ export const Reports: React.FC = () => {
                         totalUnidades={totalUnidadesEntradas}
                     />
                 ) : reportType === 'paid-notes' ? (
-                    <PaidNotesReport pedidos={filteredPedidos} clientes={clientes} />
+                    <PaidNotesReport pedidos={filteredPedidos} clientes={clientes} onOpenClient={handleOpenClientNotes} />
                 ) : reportType === 'pending-notes' ? (
                     <PendingNotesReport pedidos={filteredPedidos} clientes={clientes} />
                 ) : (
@@ -1000,13 +1043,14 @@ const GroupedNotesByClient: React.FC<{
     pedidos: any[];
     clientes: any[];
     title: string;
-}> = ({ pedidos, clientes, title }) => {
-    const groups: Record<string, { clienteNome: string; pedidos: any[]; total: number }> = {};
+    onOpen: (clientId: string, clienteNome: string, pedidos: any[]) => void;
+}> = ({ pedidos, clientes, title, onOpen }) => {
+    const groups: Record<string, { clienteId: string; clienteNome: string; pedidos: any[]; total: number }> = {};
     pedidos.forEach(p => {
         const c = clientes.find(cc => cc.id === p.clienteId);
         const key = p.clienteId || 'N/A';
         if (!groups[key]) {
-            groups[key] = { clienteNome: c?.nome || 'N/A', pedidos: [], total: 0 };
+            groups[key] = { clienteId: key, clienteNome: c?.nome || 'N/A', pedidos: [], total: 0 };
         }
         groups[key].pedidos.push(p);
         groups[key].total += p.statusPagamento === 'Pago' ? (p.valorPago ?? p.valorTotal) : p.valorTotal;
@@ -1029,18 +1073,21 @@ const GroupedNotesByClient: React.FC<{
                 <p className="text-center text-gray-500 py-8">Nenhuma nota encontrada no período.</p>
             ) : (
                 ordered.map(g => (
-                    <div key={g.clienteNome} className="border-l-4 border-indigo-600 pl-4 py-2">
-                        <div className="flex justify-between items-start mb-2">
+                    <div key={g.clienteId} className="border-l-4 border-indigo-600 pl-4 py-2">
+                        <div className="flex justify-between items-center mb-2">
                             <div>
                                 <h4 className="font-bold text-gray-800">{g.clienteNome}</h4>
                                 <p className="text-sm text-gray-600">{g.pedidos.length} notas</p>
                             </div>
-                            <p className="font-bold text-gray-800">R$ {g.total.toFixed(2)}</p>
-                        </div>
-                        <div className="ml-4 space-y-1">
-                            {g.pedidos.sort((a, b) => b.data.getTime() - a.data.getTime()).map((p: any) => (
-                                <p key={p.id} className="text-sm text-gray-600">• {p.data.toLocaleDateString('pt-BR')} • R$ {p.valorTotal.toFixed(2)} • {p.statusPagamento}</p>
-                            ))}
+                            <div className="flex items-center gap-3">
+                                <p className="font-bold text-gray-800">R$ {g.total.toFixed(2)}</p>
+                                <button
+                                    onClick={() => onOpen(g.clienteId, g.clienteNome, g.pedidos)}
+                                    className="bg-indigo-600 text-white text-sm font-semibold py-2 px-3 rounded-lg hover:bg-indigo-700"
+                                >
+                                    Ver notas
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ))
@@ -1049,8 +1096,8 @@ const GroupedNotesByClient: React.FC<{
     );
 };
 
-const PaidNotesReport: React.FC<{ pedidos: any[]; clientes: any[] }> = ({ pedidos, clientes }) => (
-    <GroupedNotesByClient pedidos={pedidos} clientes={clientes} title="Notas Pagas por Cliente" />
+const PaidNotesReport: React.FC<{ pedidos: any[]; clientes: any[]; onOpenClient: (clientId: string, clienteNome: string, pedidos: any[]) => void }> = ({ pedidos, clientes, onOpenClient }) => (
+    <GroupedNotesByClient pedidos={pedidos} clientes={clientes} title="Notas Pagas por Cliente" onOpen={onOpenClient} />
 );
 
 const PendingNotesReport: React.FC<{ pedidos: any[]; clientes: any[] }> = ({ pedidos, clientes }) => (
