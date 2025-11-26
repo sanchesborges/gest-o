@@ -12,7 +12,7 @@ export const ClientPendingNotes: React.FC = () => {
   const endQuery = qs.get('end');
   const ignoreQuery = qs.get('ignore') === '1';
 
-  const { pedidos, clientes } = useAppData();
+  const { pedidos, clientes, produtos } = useAppData();
   const [selectedPedido, setSelectedPedido] = useState<any | null>(null);
 
   const cliente = clientes.find(c => c.id === clienteId);
@@ -63,25 +63,28 @@ export const ClientPendingNotes: React.FC = () => {
           <div className="space-y-4">
             {notasPendentes.map(p => (
               <div key={p.id} className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                   <div>
                     <p className="text-sm text-gray-600"><Calendar size={14} className="inline mr-1" /> {p.data.toLocaleDateString('pt-BR')}</p>
                     <p className="text-sm text-gray-600">Pedido: <span className="font-mono">{p.id.toUpperCase()}</span></p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2 w-full sm:w-auto sm:items-end">
                     <p className="font-bold text-gray-800">R$ {p.valorTotal.toFixed(2)}</p>
                     <button
                       onClick={() => setSelectedPedido(p)}
-                      className="bg-indigo-600 text-white font-semibold py-2 px-3 rounded-lg hover:bg-indigo-700"
+                      className="bg-indigo-600 text-white font-semibold py-2 px-3 rounded-lg hover:bg-indigo-700 w-full sm:w-auto"
                     >
                       Abrir Nota
                     </button>
                   </div>
                 </div>
                 <div className="mt-3 ml-1 text-sm text-gray-600">
-                  {p.itens.map((item: any, idx: number) => (
-                    <span key={idx} className="inline-block mr-3">• {item.quantidade}x</span>
-                  ))}
+                  {p.itens.map((item: any, idx: number) => {
+                    const produto = produtos.find(pr => pr.id === item.produtoId);
+                    return (
+                      <span key={idx} className="inline-block mr-3">• {item.quantidade}x {produto?.nome || 'N/A'}</span>
+                    );
+                  })}
                 </div>
               </div>
             ))}
