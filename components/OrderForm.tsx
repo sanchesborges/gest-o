@@ -128,7 +128,7 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 valorTotal: calculateTotal(),
                 status: StatusPedido.PENDENTE,
                 statusPagamento: StatusPagamento.PENDENTE,
-                dataVencimentoPagamento: new Date(new Date().setDate(new Date().getDate() + (isCashPayment ? 0 : 14)))
+                dataVencimentoPagamento: new Date(new Date().setDate(new Date().getDate() + 7))
             });
             onClose();
         } catch (error) {
