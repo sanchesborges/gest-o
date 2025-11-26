@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
           injectRegister: false, // Desabilitar registro automático
           selfDestroying: true, // Remover SW existente
           devOptions: { enabled: false }, // Desabilitar completamente PWA em desenvolvimento
-          includeAssets: ['favicon.svg', 'favicon.ico', 'icon-192.svg', 'icon-512.svg'],
+          includeAssets: ['favicon.svg', 'favicon.ico', 'logo-mana.png'],
           manifest: {
             name: 'Maná - Gestão de Produtos',
             short_name: 'Maná',
@@ -42,16 +42,16 @@ export default defineConfig(({ mode }) => {
             scope: '/',
             icons: [
               {
-                src: '/icon-192.svg',
+                src: '/logo-mana.png',
                 sizes: '192x192',
-                type: 'image/svg+xml',
-                purpose: 'any maskable'
+                type: 'image/png',
+                purpose: 'any'
               },
               {
-                src: '/icon-512.svg',
+                src: '/logo-mana.png',
                 sizes: '512x512',
-                type: 'image/svg+xml',
-                purpose: 'any maskable'
+                type: 'image/png',
+                purpose: 'any'
               }
             ]
           },
