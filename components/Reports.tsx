@@ -359,7 +359,7 @@ export const Reports: React.FC = () => {
                     <h3 className="text-lg font-semibold text-gray-700">Configurações do Relatório</h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Tipo de Relatório
@@ -369,44 +369,46 @@ export const Reports: React.FC = () => {
                             onChange={(e) => setReportType(e.target.value as ReportType)}
                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                         >
-                        <option value="weekly-orders">Pedidos do Período</option>
-                        <option value="products-summary">Resumo de Produtos</option>
-                        <option value="factory-orders">Pedidos para Fábrica</option>
-                        <option value="customer-history">Relatório por Cliente</option>
-                        <option value="paid-notes">Notas Pagas por Cliente</option>
-                        <option value="pending-notes">Notas Pendentes por Cliente</option>
-                    </select>
-                </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            <Calendar size={16} className="inline mr-1" />
-                            Data Início
-                        </label>
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            disabled={(reportType === 'customer-history' || reportType === 'paid-notes' || reportType === 'pending-notes') && ignorePeriod}
-                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        />
+                            <option value="weekly-orders">Pedidos do Período</option>
+                            <option value="products-summary">Resumo de Produtos</option>
+                            <option value="factory-orders">Pedidos para Fábrica</option>
+                            <option value="customer-history">Relatório por Cliente</option>
+                            <option value="paid-notes">Notas Pagas por Cliente</option>
+                            <option value="pending-notes">Notas Pendentes por Cliente</option>
+                        </select>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            <Calendar size={16} className="inline mr-1" />
-                            Data Fim
-                        </label>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            disabled={(reportType === 'customer-history' || reportType === 'paid-notes' || reportType === 'pending-notes') && ignorePeriod}
-                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <Calendar size={16} className="inline mr-1" />
+                                Data Início
+                            </label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                disabled={(reportType === 'customer-history' || reportType === 'paid-notes' || reportType === 'pending-notes') && ignorePeriod}
+                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <Calendar size={16} className="inline mr-1" />
+                                Data Fim
+                            </label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                disabled={(reportType === 'customer-history' || reportType === 'paid-notes' || reportType === 'pending-notes') && ignorePeriod}
+                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        </div>
                     </div>
                 {reportType === 'customer-history' && (
-                    <div className="md:col-span-3">
+                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
                         <select
                             value={selectedClientId}
@@ -441,7 +443,7 @@ export const Reports: React.FC = () => {
                     </div>
                 )}
                 {(reportType === 'paid-notes' || reportType === 'pending-notes') && (
-                    <div className="md:col-span-3">
+                    <div>
                         <div className="mt-1">
                             <label className="inline-flex items-center text-sm text-gray-700">
                                 <input
@@ -474,13 +476,14 @@ export const Reports: React.FC = () => {
                     <h3 className="text-lg font-semibold text-gray-700">Exportar e Compartilhar</h3>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-3">
                     <button
                         onClick={() => handleExport('whatsapp-text')}
                         className="bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
                     >
                         <Share2 size={18} className="mr-2" />
-                        WhatsApp (Texto)
+                        <span className="hidden lg:inline">WhatsApp (Texto)</span>
+                        <span className="lg:hidden inline">WhatsApp</span>
                     </button>
 
                     <button
@@ -488,7 +491,8 @@ export const Reports: React.FC = () => {
                         className="bg-blue-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
                     >
                         <Download size={18} className="mr-2" />
-                        {reportType === 'customer-history' ? 'Salvar Imagem do Cliente' : 'Salvar Imagem'}
+                        <span className="hidden lg:inline">{reportType === 'customer-history' ? 'Salvar Imagem do Cliente' : 'Salvar Imagem'}</span>
+                        <span className="lg:hidden inline">Imagem</span>
                     </button>
 
                     <button
@@ -496,7 +500,8 @@ export const Reports: React.FC = () => {
                         className="bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center"
                     >
                         <Download size={18} className="mr-2" />
-                        Exportar PDF
+                        <span className="hidden lg:inline">Exportar PDF</span>
+                        <span className="lg:hidden inline">PDF</span>
                     </button>
                 </div>
             </div>
@@ -1053,11 +1058,11 @@ const GroupedNotesByClient: React.FC<{
                                 <h4 className="font-bold text-gray-800">{g.clienteNome}</h4>
                                 <p className="text-sm text-gray-600">{g.pedidos.length} notas</p>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-col gap-2 items-end lg:flex-row lg:items-center lg:gap-3">
                                 <p className="font-bold text-gray-800">R$ {g.total.toFixed(2)}</p>
                                 <button
                                     onClick={() => onOpen(g.clienteId, g.clienteNome, g.pedidos)}
-                                    className="bg-indigo-600 text-white text-sm font-semibold py-2 px-3 rounded-lg hover:bg-indigo-700"
+                                    className="bg-indigo-600 text-white text-sm font-semibold py-2 px-3 rounded-lg hover:bg-indigo-700 lg:w-auto"
                                 >
                                     Ver notas
                                 </button>
