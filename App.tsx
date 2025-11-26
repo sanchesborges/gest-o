@@ -11,6 +11,7 @@ import { FactoryOrders } from './components/FactoryOrders';
 import { Clients } from './components/Clients';
 import { Financials } from './components/Financials';
 import { Reports } from './components/Reports';
+import { ClientPaidNotes } from './components/ClientPaidNotes';
 import { AppDataProvider } from './hooks/useAppData';
 import { UserRole } from './types';
 import { Products } from './components/Products';
@@ -110,6 +111,7 @@ const AdminPortal: React.FC = () => {
                     <Route path="/" element={<HomePage />} />
                     <Route path="/graficos" element={<Graficos />} />
                     <Route path="/relatorios" element={<Reports />} />
+                    <Route path="/relatorios/cliente/:clienteId/notas-pagas" element={<ClientPaidNotes />} />
                     <Route path="/vendas" element={<SalesReport />} />
                     <Route path="/entregador-view" element={<Dashboard userRole={UserRole.ENTREGADOR} />} />
                     <Route path="/estoque" element={<Stock userRole={userRole} />} />

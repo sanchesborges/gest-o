@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppData } from '../hooks/useAppData';
 import { FileText, Download, Share2, Calendar, Package, TrendingUp, Filter, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -19,13 +20,13 @@ export const Reports: React.FC = () => {
     const [selectedClientId, setSelectedClientId] = useState<string>('');
     const [ignorePeriod, setIgnorePeriod] = useState<boolean>(false);
     const reportRef = useRef<HTMLDivElement>(null);
-    const [clientNotesOpen, setClientNotesOpen] = useState<boolean>(false);
-    const [clientNotesName, setClientNotesName] = useState<string>('');
-    const [clientNotesList, setClientNotesList] = useState<any[]>([]);
+    const navigate = useNavigate();
     const handleOpenClientNotes = (clientId: string, clientName: string, notes: any[]) => {
-        setClientNotesName(clientName);
-        setClientNotesList(notes);
-        setClientNotesOpen(true);
+        const qs = new URLSearchParams();
+        qs.set('start', startDate);
+        qs.set('end', endDate);
+        if (ignorePeriod) qs.set('ignore', '1');
+        navigate(`/relatorios/cliente/${clientId}/notas-pagas?${qs.toString()}`);
     };
 
     // Filtrar pedidos por período
@@ -336,41 +337,7 @@ export const Reports: React.FC = () => {
 
     return (
         <div className="space-y-6 p-6 pt-8">
-            {clientNotesOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={() => setClientNotesOpen(false)}>
-                    <div className="bg-white p-6 rounded-lg shadow-2xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold text-gray-800">Notas Pagas • {clientNotesName}</h3>
-                            <button onClick={() => setClientNotesOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
-                        </div>
-                        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-                            {clientNotesList.length === 0 ? (
-                                <p className="text-center text-gray-500 py-8">Sem notas pagas.</p>
-                            ) : (
-                                clientNotesList
-                                    .slice()
-                                    .sort((a, b) => b.data.getTime() - a.data.getTime())
-                                    .map((p: any) => (
-                                        <div key={p.id} className="border border-gray-200 rounded-lg p-3">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <p className="text-sm text-gray-600">{p.data.toLocaleDateString('pt-BR')}</p>
-                                                <p className="font-bold text-gray-800">R$ {p.valorTotal.toFixed(2)}</p>
-                                            </div>
-                                            <div className="ml-2 space-y-1">
-                                                {p.itens.map((item: any, idx: number) => {
-                                                    const produto = produtos.find(pp => pp.id === item.produtoId);
-                                                    return (
-                                                        <p key={idx} className="text-sm text-gray-600">• {item.quantidade}x {produto?.nome || 'N/A'}</p>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    ))
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <h2 className="text-3xl font-bold text-gray-800 flex items-center">
                     <FileText className="mr-3" size={32} />
