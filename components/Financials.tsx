@@ -73,6 +73,7 @@ const FinancialCard: React.FC<{ pedido: Pedido, onRegisterPayment: (pedido: Pedi
                 <div className="border-t pt-3 mt-3">
                     <p className="text-sm text-gray-600">Valor</p>
                     <p className="text-2xl font-bold text-gray-900 mb-2">R$ {pedido.valorTotal.toFixed(2)}</p>
+                    <p className="text-sm text-gray-600">Data do Pedido: <span className="font-medium">{pedido.data.toLocaleDateString('pt-BR')}</span></p>
                     <p className="text-sm text-gray-600">Vencimento: <span className="font-medium">{pedido.dataVencimentoPagamento.toLocaleDateString('pt-BR')}</span></p>
                 </div>
             </div>
@@ -97,7 +98,12 @@ const FinancialsRow: React.FC<{ pedido: Pedido, onRegisterPayment: (pedido: Pedi
     <tr className={`border-b border-gray-200 hover:bg-gray-100 ${isOverdue ? 'bg-red-50' : ''}`}>
       <td className="py-3 px-6 text-left">{pedido.id.toUpperCase()}</td>
       <td className="py-3 px-6 text-left">{cliente?.nome || 'N/A'}</td>
-      <td className="py-3 px-6 text-center">{pedido.dataVencimentoPagamento.toLocaleDateString('pt-BR')}</td>
+      <td className="py-3 px-6 text-center">
+        <div className="flex flex-col items-center">
+          <span className="text-xs text-gray-500">Data do Pedido: {pedido.data.toLocaleDateString('pt-BR')}</span>
+          <span className="text-sm text-gray-700">Vencimento: {pedido.dataVencimentoPagamento.toLocaleDateString('pt-BR')}</span>
+        </div>
+      </td>
       <td className="py-3 px-6 text-right font-mono">R$ {pedido.valorTotal.toFixed(2)}</td>
       <td className="py-3 px-6 text-center">
         <span className={`${statusInfo.color} py-1 px-3 rounded-full text-xs font-bold`}>{statusInfo.text}</span>
