@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
+import { useDarkMode } from '../hooks/useDarkMode';
 import { PlusCircle, Package, TrendingUp, TrendingDown, Box, Plus, Minus, Trash2, ShoppingCart, Edit } from 'lucide-react';
 import { Produto, UserRole } from '../types';
 import { Link } from 'react-router-dom';
@@ -430,6 +431,7 @@ const AddStockModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 }
 
 export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
+  useDarkMode();
   const { produtos, ocultarProduto } = useAppData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -476,7 +478,7 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
   };
 
   return (
-    <div className="space-y-6 p-6 pt-8">
+    <div className="space-y-6 p-6 pt-8 bg-white dark:bg-gray-900">
         {isModalOpen && <AddStockModal onClose={() => setIsModalOpen(false)} />}
         {isEditModalOpen && produtoToEdit && <EditProductModal produto={produtoToEdit} onClose={handleCloseEditModal} />}
         
@@ -512,7 +514,7 @@ export const Stock: React.FC<{userRole: UserRole}> = ({userRole}) => {
         )}
 
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <h2 className="text-3xl font-bold text-gray-800 flex items-center"><Package className="mr-3" size={32} /> Controle de Estoque</h2>
+            <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center"><Package className="mr-3" size={32} /> Controle de Estoque</h2>
             <div className="flex flex-col sm:flex-row-reverse gap-2 w-full sm:w-auto">
                 {userRole === UserRole.ADMIN && selectedProducts.size > 0 && (
                     <button 

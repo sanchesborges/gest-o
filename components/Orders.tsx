@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
+import { useDarkMode } from '../hooks/useDarkMode';
 import { PlusCircle, ShoppingCart, Printer, Filter, Bike, X, Trash2, Factory } from 'lucide-react';
 import { Pedido, StatusPedido, StatusPagamento, UserRole } from '../types';
 import { OrderForm } from './OrderForm';
@@ -252,6 +253,7 @@ const OrderRow: React.FC<{
 };
 
 export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
+    useDarkMode();
     const { pedidos, clientes, deletePedido, reloadPedidos } = useAppData();
     const { entregadorId } = useParams<{ entregadorId: string }>();
     const navigate = useNavigate();
@@ -407,7 +409,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
     }
 
     return (
-        <div className="space-y-6 p-6 pt-8">
+        <div className="space-y-6 p-6 pt-8 bg-white dark:bg-gray-900">
             {isFormOpen && <OrderForm onClose={() => setIsFormOpen(false)} />}
             {isNoteOpen && selectedOrder && <DeliveryNote pedido={selectedOrder} onClose={handleCloseModals} />}
             {isAssignModalOpen && selectedOrder && userRole === UserRole.ADMIN && <AssignDriverModal pedido={selectedOrder} onClose={handleCloseModals} />}
@@ -448,7 +450,7 @@ export const Orders: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
             )}
 
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <h2 className="text-3xl font-bold text-gray-800 flex items-center"><ShoppingCart className="mr-3" size={32} /> {isEntregadorView ? 'Minhas Entregas' : 'Gestão de Pedidos'}</h2>
+                <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center"><ShoppingCart className="mr-3" size={32} /> {isEntregadorView ? 'Minhas Entregas' : 'Gestão de Pedidos'}</h2>
                 <div className="flex flex-col sm:flex-row-reverse gap-2 w-full sm:w-auto">
                     {userRole === UserRole.ADMIN && selectedOrders.size > 0 && (
                         <button 

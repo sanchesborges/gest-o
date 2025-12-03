@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
+import { useDarkMode } from '../hooks/useDarkMode';
 import { PlusCircle, Users, Edit2 } from 'lucide-react';
 import { Cliente, TipoCliente, CondicaoPagamento, UserRole } from '../types';
 
@@ -120,6 +121,7 @@ const ClientModal: React.FC<{ cliente?: Cliente; onClose: () => void }> = ({ cli
 
 
 export const Clients: React.FC<{userRole: UserRole}> = ({userRole}) => {
+  useDarkMode();
   const { clientes } = useAppData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | undefined>(undefined);
@@ -135,10 +137,10 @@ export const Clients: React.FC<{userRole: UserRole}> = ({userRole}) => {
   };
 
   return (
-    <div className="space-y-6 p-6 pt-8">
+    <div className="space-y-6 p-6 pt-8 bg-white dark:bg-gray-900">
       {isModalOpen && <ClientModal cliente={editingCliente} onClose={handleCloseModal} />}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center"><Users className="mr-3" size={32} /> Cadastro de Clientes</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center"><Users className="mr-3" size={32} /> Cadastro de Clientes</h2>
         {userRole === UserRole.ADMIN && (
             <button 
                 onClick={() => setIsModalOpen(true)} 

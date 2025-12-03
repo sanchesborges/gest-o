@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
+import { useDarkMode } from '../hooks/useDarkMode';
 import { DollarSign, CheckCircle, ShieldAlert, Clock } from 'lucide-react';
 import { Pedido, StatusPagamento, MetodoPagamento, UserRole } from '../types';
 
@@ -119,6 +120,7 @@ const FinancialsRow: React.FC<{ pedido: Pedido, onRegisterPayment: (pedido: Pedi
 
 
 export const Financials: React.FC<{userRole: UserRole}> = ({userRole}) => {
+  useDarkMode();
   const { pedidos } = useAppData();
   const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
 
@@ -155,9 +157,9 @@ export const Financials: React.FC<{userRole: UserRole}> = ({userRole}) => {
   }
 
   return (
-    <div className="space-y-6 p-6 pt-8">
+    <div className="space-y-6 p-6 pt-8 bg-white dark:bg-gray-900">
       {selectedOrder && <AddPaymentModal pedido={selectedOrder} onClose={() => setSelectedOrder(null)} />}
-      <h2 className="text-3xl font-bold text-gray-800 flex items-center"><DollarSign className="mr-3" size={32} /> Contas a Receber</h2>
+      <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center"><DollarSign className="mr-3" size={32} /> Contas a Receber</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SummaryCard title="Total a Receber" value={`R$ ${totalReceber.toFixed(2)}`} icon={<DollarSign className="text-white"/>} colorClass="bg-yellow-500" />

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppData } from '../hooks/useAppData';
+import { useDarkMode } from '../hooks/useDarkMode';
 import { FileText, Download, Share2, Calendar, Package, TrendingUp, Filter, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -9,6 +10,7 @@ type ReportType = 'weekly-orders' | 'products-summary' | 'factory-orders' | 'cus
 type ExportFormat = 'whatsapp-text' | 'whatsapp-image' | 'pdf';
 
 export const Reports: React.FC = () => {
+    useDarkMode();
     const { pedidos, produtos, clientes, entradasEstoque } = useAppData();
     const [reportType, setReportType] = useState<ReportType>('weekly-orders');
     const [startDate, setStartDate] = useState<string>(() => {
@@ -343,10 +345,10 @@ export const Reports: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 p-6 pt-8">
+        <div className="space-y-6 p-6 pt-8 bg-white dark:bg-gray-900">
             
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <h2 className="text-3xl font-bold text-gray-800 flex items-center">
+                <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
                     <FileText className="mr-3" size={32} />
                     Relatórios
                 </h2>

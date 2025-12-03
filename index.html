@@ -31,6 +31,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
@@ -104,6 +105,48 @@
             registrations.forEach(reg => reg.unregister());
           });
         }
+      });
+      
+      // Aplicar regras de dark mode APÓS Tailwind carregar
+      window.addEventListener('load', function() {
+        console.log('🎨 Aplicando dark mode fix...');
+        
+        // Aguardar um pouco para garantir que Tailwind processou tudo
+        setTimeout(function() {
+          const style = document.createElement('style');
+          style.id = 'dark-mode-fix-final';
+          style.textContent = `
+            /* DARK MODE FIX - ÚLTIMA PALAVRA */
+            .dark .text-gray-800,
+            .dark h1.text-gray-800,
+            .dark h2.text-gray-800,
+            .dark h3.text-gray-800,
+            .dark .text-gray-800.dark\\:text-gray-100 {
+              color: #f1f5f9 !important;
+            }
+            
+            .dark .text-gray-900,
+            .dark h1.text-gray-900,
+            .dark h2.text-gray-900,
+            .dark .text-gray-900.dark\\:text-white {
+              color: #ffffff !important;
+            }
+            
+            .dark h1, .dark h2, .dark h3 {
+              color: #f1f5f9 !important;
+            }
+          `;
+          document.head.appendChild(style);
+          console.log('✅ Dark mode fix aplicado!');
+          
+          // Forçar re-render
+          if (document.documentElement.classList.contains('dark')) {
+            console.log('🌙 Dark mode está ATIVO');
+            document.querySelectorAll('h1, h2, h3').forEach(el => {
+              console.log('Título encontrado:', el.textContent.substring(0, 30), 'Color:', window.getComputedStyle(el).color);
+            });
+          }
+        }, 500);
       });
     </script>
     

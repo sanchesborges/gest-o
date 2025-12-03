@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useAppData } from '../hooks/useAppData';
+import { useDarkMode } from '../hooks/useDarkMode';
 import { TrendingUp, DollarSign, Package, Calendar, Filter, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { StatusPedido } from '../types';
 
 export const SalesReport: React.FC = () => {
+  useDarkMode();
   const { pedidos, produtos } = useAppData();
   const [filtroData, setFiltroData] = useState<'todos' | 'mes' | 'semana'>('mes');
 
@@ -107,10 +109,10 @@ export const SalesReport: React.FC = () => {
   }, [estatisticas.produtosVendidos, produtos]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-6 pb-28">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 p-6 pb-28">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
           <TrendingUp className="mr-3 text-purple-600" size={32} />
           Relatório de Vendas
         </h1>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../hooks/useAppData';
+import { useDarkMode } from '../hooks/useDarkMode';
 import { UserPlus, X, Bike, UserCheck, Phone, MessageCircle, Trash2 } from 'lucide-react';
 import { StatusPedido } from '../types';
 
@@ -142,6 +143,7 @@ const AddEntregadorModal: React.FC<{ onClose: () => void, onAdd: (data: { nome: 
 
 
 export const Entregadores: React.FC = () => {
+    useDarkMode();
     const { entregadores, pedidos, clientes, addEntregador, deleteEntregador } = useAppData();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -186,10 +188,10 @@ export const Entregadores: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 p-6 pt-8">
+        <div className="space-y-6 p-6 pt-8 bg-white dark:bg-gray-900">
             {isModalOpen && <AddEntregadorModal onClose={() => setIsModalOpen(false)} onAdd={handleAddEntregador} />}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
                     <Bike className="mr-3" size={32} />
                     Controle de Entregadores
                 </h2>
