@@ -47,8 +47,8 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center p-6 border-b bg-gray-50 rounded-t-xl">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center p-6 border-b bg-gray-50 rounded-t-xl sticky top-0 z-10">
                     <div className="flex items-center">
                         <Package className="text-indigo-600 mr-3" size={28}/>
                         <h2 className="text-2xl font-bold text-gray-800">Novo Produto</h2>
@@ -57,12 +57,12 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         <X size={24} />
                     </button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
                     <div>
                         <label htmlFor="nome" className="block text-sm font-medium text-gray-700">Nome do Produto (Ex: Pão de Queijo Tradicional)</label>
                         <input id="nome" type="text" placeholder="Pão de Queijo Tradicional" value={nome} onChange={e => setNome(e.target.value)} required className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="tipo" className="block text-sm font-medium text-gray-700">Tipo</label>
                             <select id="tipo" value={tipo} onChange={e => setTipo(e.target.value as TipoProduto)} className="w-full p-2 mt-1 border border-gray-300 rounded-md">
@@ -104,7 +104,7 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             </p>
                         </div>
                     )}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div>
                             <label htmlFor="precoPadrao" className="block text-sm font-medium text-gray-700">Preço de Venda (R$)</label>
                             <input id="precoPadrao" type="number" step="0.01" min="0" placeholder="25.00" value={precoPadrao} onChange={e => setPrecoPadrao(parseFloat(e.target.value))} required className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
@@ -113,27 +113,19 @@ const AddProductModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             <label htmlFor="custoUnitario" className="block text-sm font-medium text-gray-700">Custo Unitário (R$)</label>
                             <input id="custoUnitario" type="number" step="0.01" min="0" placeholder="13.50" value={custoUnitario} onChange={e => setCustoUnitario(parseFloat(e.target.value))} className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
                         </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="estoqueMinimo" className="block text-sm font-medium text-gray-700">Estoque Mínimo</label>
                             <input id="estoqueMinimo" type="number" min="0" placeholder="10" value={estoqueMinimo} onChange={e => setEstoqueMinimo(parseInt(e.target.value, 10))} required className="w-full p-2 mt-1 border border-gray-300 rounded-md" />
                         </div>
-                        {custoUnitario > 0 && precoPadrao > 0 && (
-                            <div className="flex items-end">
-                                <div className="bg-green-50 border border-green-200 rounded-md p-2 w-full">
-                                    <p className="text-xs text-gray-600">Lucro por unidade:</p>
-                                    <p className="text-lg font-bold text-green-600">
-                                        R$ {(precoPadrao - custoUnitario).toFixed(2)}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                        {((precoPadrao - custoUnitario) / precoPadrao * 100).toFixed(1)}% margem
-                                    </p>
-                                </div>
-                            </div>
-                        )}
                     </div>
-                    <div className="flex justify-end space-x-4 pt-4">
+                    {custoUnitario > 0 && precoPadrao > 0 && (
+                        <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                            <p className="text-xs text-gray-600">Lucro por unidade:</p>
+                            <p className="text-lg font-bold text-green-600">R$ {(precoPadrao - custoUnitario).toFixed(2)}</p>
+                            <p className="text-xs text-gray-500">{((precoPadrao - custoUnitario) / precoPadrao * 100).toFixed(1)}% margem</p>
+                        </div>
+                    )}
+                    <div className="sticky bottom-0 -mx-6 px-6 bg-white border-t pt-4 flex justify-end space-x-4">
                         <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancelar</button>
                         <button type="submit" className="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Salvar Produto</button>
                     </div>
