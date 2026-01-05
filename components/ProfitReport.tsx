@@ -167,9 +167,10 @@ export const ProfitReport: React.FC = () => {
             >
               <ArrowLeft size={20} className="text-gray-600" />
             </button>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
-              <Wallet className="mr-3 text-green-600" size={32} />
-              Lucro - Receitas Pagas
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
+              <Wallet className="mr-2 sm:mr-3 text-green-600" size={28} sm:size={32} />
+              <span className="hidden sm:inline">Lucro - Receitas Pagas</span>
+              <span className="inline sm:hidden">Receitas</span>
             </h1>
           </div>
           <div className="flex gap-2">
@@ -204,8 +205,8 @@ export const ProfitReport: React.FC = () => {
           <button
             onClick={() => setFiltroData('semana')}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${filtroData === 'semana'
-                ? 'bg-green-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-green-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
           >
             7 dias
@@ -213,8 +214,8 @@ export const ProfitReport: React.FC = () => {
           <button
             onClick={() => setFiltroData('mes')}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${filtroData === 'mes'
-                ? 'bg-green-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-green-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
           >
             30 dias
@@ -222,8 +223,8 @@ export const ProfitReport: React.FC = () => {
           <button
             onClick={() => setFiltroData('todos')}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${filtroData === 'todos'
-                ? 'bg-green-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-green-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
           >
             Todos
@@ -294,8 +295,8 @@ export const ProfitReport: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${isParcial
-                          ? 'bg-yellow-200 text-yellow-800'
-                          : 'bg-green-200 text-green-800'
+                        ? 'bg-yellow-200 text-yellow-800'
+                        : 'bg-green-200 text-green-800'
                         }`}>
                         {isParcial ? 'Parcial' : 'Pago'}
                       </span>
