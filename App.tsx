@@ -20,6 +20,7 @@ import { Entregadores } from './components/Entregadores';
 import { InstallPrompt } from './components/InstallPrompt';
 import { EntregadorDeliveryView } from './components/EntregadorDeliveryView';
 import { SalesReport } from './components/SalesReport';
+import { ProfitReport } from './components/ProfitReport';
 
 
 
@@ -115,6 +116,7 @@ const AdminPortal: React.FC = () => {
                     <Route path="/relatorios/cliente/:clienteId/notas-pagas" element={<ClientPaidNotes />} />
                     <Route path="/relatorios/cliente/:clienteId/notas-pendentes" element={<ClientPendingNotes />} />
                     <Route path="/vendas" element={<SalesReport />} />
+                    <Route path="/lucro" element={<ProfitReport />} />
                     <Route path="/entregador-view" element={<Dashboard userRole={UserRole.ENTREGADOR} />} />
                     <Route path="/estoque" element={<Stock userRole={userRole} />} />
                     <Route path="/produtos" element={<Products userRole={userRole} />} />

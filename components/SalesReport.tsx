@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppData } from '../hooks/useAppData';
 import { useDarkMode } from '../hooks/useDarkMode';
-import { TrendingUp, DollarSign, Package, Calendar, Filter, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { TrendingUp, DollarSign, Package, Calendar, Filter, ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react';
 import { StatusPedido } from '../types';
 
 export const SalesReport: React.FC = () => {
   useDarkMode();
+  const navigate = useNavigate();
   const { pedidos, produtos } = useAppData();
   const [filtroData, setFiltroData] = useState<'todos' | 'mes' | 'semana'>('mes');
 
@@ -112,10 +114,19 @@ export const SalesReport: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 p-6 pb-28">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
-          <TrendingUp className="mr-3 text-purple-600" size={32} />
-          Relatório de Vendas
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
+            <TrendingUp className="mr-3 text-purple-600" size={32} />
+            Relatório de Vendas
+          </h1>
+          <button
+            onClick={() => navigate('/lucro')}
+            className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
+          >
+            <Wallet size={20} />
+            Lucro
+          </button>
+        </div>
         <p className="text-gray-600 text-sm mt-1">Análise de vendas e lucratividade</p>
       </div>
 
@@ -128,31 +139,28 @@ export const SalesReport: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setFiltroData('semana')}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-              filtroData === 'semana'
-                ? 'bg-purple-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${filtroData === 'semana'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
           >
             7 dias
           </button>
           <button
             onClick={() => setFiltroData('mes')}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-              filtroData === 'mes'
-                ? 'bg-purple-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${filtroData === 'mes'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
           >
             30 dias
           </button>
           <button
             onClick={() => setFiltroData('todos')}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-              filtroData === 'todos'
-                ? 'bg-purple-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${filtroData === 'todos'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
           >
             Todos
           </button>
@@ -232,13 +240,12 @@ export const SalesReport: React.FC = () => {
                     <p className="text-sm text-gray-600">{item.produto?.tamanhoPacote}</p>
                   </div>
                   <div className="text-right">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      item.margemLucro >= 30
-                        ? 'bg-green-200 text-green-800'
-                        : item.margemLucro >= 15
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.margemLucro >= 30
+                      ? 'bg-green-200 text-green-800'
+                      : item.margemLucro >= 15
                         ? 'bg-yellow-200 text-yellow-800'
                         : 'bg-red-200 text-red-800'
-                    }`}>
+                      }`}>
                       {item.margemLucro.toFixed(1)}% lucro
                     </span>
                   </div>
@@ -279,7 +286,7 @@ export const SalesReport: React.FC = () => {
       {estatisticas.totalCusto === 0 && produtosOrdenados.length > 0 && (
         <div className="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
           <p className="text-sm text-yellow-800">
-            <strong>⚠️ Precisa de um Aplicativo?:</strong> Fale com o top dos top. 
+            <strong>⚠️ Precisa de um Aplicativo?:</strong> Fale com o top dos top.
             Sistemas e Aplicativos de Verdade.
           </p>
         </div>
