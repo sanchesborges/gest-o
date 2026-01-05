@@ -152,7 +152,7 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         <div className="bg-white bg-opacity-20 p-2 sm:p-3 rounded-xl mr-2 sm:mr-3">
                             <ShoppingCart className="text-white" size={24} />
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="flex flex-row items-center gap-2">
                             <h2 className="text-xl sm:text-2xl font-bold text-white">Novo Pedido</h2>
                             <input
                                 type="date"
