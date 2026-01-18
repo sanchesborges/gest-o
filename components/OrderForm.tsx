@@ -8,7 +8,7 @@ export const OrderForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [clienteId, setClienteId] = useState<string>(clientes[0]?.id || '');
     const [itens, setItens] = useState<ItemPedido[]>([]);
     const [precoInputs, setPrecoInputs] = useState<{ [key: number]: string }>({});
-    const [dataPedido, setDataPedido] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [dataPedido, setDataPedido] = useState<string>(() => new Date().toLocaleDateString('sv-SE'));
 
     const handleAddItem = () => {
         const defaultProduct = produtos.find(p => !itens.some(i => i.produtoId === p.id));
